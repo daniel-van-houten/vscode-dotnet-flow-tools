@@ -1,3 +1,4 @@
+*.visx
 .vscode/**
 .vscode-test/**
 out/**
@@ -26,3 +27,4 @@ cli/Formatters/**
 cli/Models/**
 cli/Resolvers/**
 cli/Services/**
+

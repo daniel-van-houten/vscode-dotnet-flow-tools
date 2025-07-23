@@ -182,6 +182,9 @@ The extension generates markdown documentation that includes:
 
 ## 🔄 Release Notes
 
+### 1.0.3
+- Fixed Windows compatibility issues with Unicode symbols in CLI output
+
 ### 0.0.1
 - Initial release with core documentation generation
 - Support for built-in and AWS Bedrock AI providers

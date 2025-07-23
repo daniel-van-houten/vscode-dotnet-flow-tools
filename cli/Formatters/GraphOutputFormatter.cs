@@ -36,8 +36,8 @@ namespace DotNet.Flow.Formatters
         {
             if (node == null) return;
 
-            var marker = isLast ? "└─> " : "├─> ";
-            var connector = isLast ? "    " : "│   ";
+            var marker = isLast ? "\\-> " : "+-> ";
+            var connector = isLast ? "    " : "|   ";
 
             if (!isRoot)
             {

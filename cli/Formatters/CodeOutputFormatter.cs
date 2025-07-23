@@ -65,7 +65,7 @@ namespace DotNet.Flow.Formatters
                 var (node, lines) = allMethods[i];
                 
                 // Add combined separator with file, class, and method info
-                codeOutput.AppendLine($"<!--§ File: {node.Location.FileName} Class: {node.Method.ClassName} Method: {node.Method.GetSimplifiedName()} -->");
+                codeOutput.AppendLine($"<!--### File: {node.Location.FileName} Class: {node.Method.ClassName} Method: {node.Method.GetSimplifiedName()} -->");
                 
                 // Find the minimum indentation of the method body
                 int minIndentation = int.MaxValue;

@@ -21,7 +21,7 @@ export function parseTrace(traceContent: string): ParsedTrace {
 }
 
 /**
- * Parses code sections using the <!--§ ... --> markers
+ * Parses code sections using the <!--### ... --> markers
  */
 function parseCodeSections(content: string): CodeSection[] {
   // Find the CODE-BEGIN/CODE-END block first
@@ -32,8 +32,8 @@ function parseCodeSections(content: string): CodeSection[] {
 
   const codeBlock = codeBlockMatch[1];
   
-  // Split on the § markers, keeping the metadata
-  const parts = codeBlock.split(/<!--§\s+/).slice(1); // Remove pre-code header
+  // Split on the ### markers, keeping the metadata
+  const parts = codeBlock.split(/<!--###\s+/).slice(1); // Remove pre-code header
   
   const sections: CodeSection[] = [];
   
@@ -48,7 +48,7 @@ function parseCodeSections(content: string): CodeSection[] {
 }
 
 /**
- * Parses a single code section from a § marker part
+ * Parses a single code section from a ### marker part
  */
 function parseCodeSection(part: string): CodeSection | null {
   // Extract the marker line (everything before the first -->)
@@ -58,7 +58,7 @@ function parseCodeSection(part: string): CodeSection | null {
   }
 
   const markerLine = part.substring(0, markerEndIndex).trim();
-  const content = '<!--§ ' + part; // Restore the full section with marker
+  const content = '<!--### ' + part; // Restore the full section with marker
 
   // Parse the marker line: "File: OrderController.cs Class: OrderController Method: CreateOrder"
   const metadata = parseMarkerMetadata(markerLine);
@@ -111,9 +111,9 @@ export function validateTraceStructure(content: string): { isValid: boolean; err
     return { isValid: false, error: 'Missing code section markers' };
   }
 
-  // Check for at least one § marker
-  if (!content.includes('<!--§')) {
-    return { isValid: false, error: 'No code sections found (missing § markers)' };
+  // Check for at least one ### marker
+  if (!content.includes('<!--###')) {
+    return { isValid: false, error: 'No code sections found (missing ### markers)' };
   }
 
   return { isValid: true };
