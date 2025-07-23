@@ -1,0 +1,177 @@
+{
+  "name": "dotnet-flow-tools",
+  "displayName": "Dotnet Flow Tools",
+  "publisher": "DanielVanHouten",
+  "description": "Translate .NET code into easy-to-read business domain documentation.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:csharp"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dotnet-flow-tools.documentThis",
+        "title": "Document This",
+        "category": "DotnetFlowTools"
+      },
+      {
+        "command": "dotnet-flow-tools.traceThis.all",
+        "title": "Trace This: All",
+        "category": "DotnetFlowTools"
+      },
+      {
+        "command": "dotnet-flow-tools.traceThis.methodsOnly",
+        "title": "Trace This: Methods Only",
+        "category": "DotnetFlowTools"
+      },
+      {
+        "command": "dotnet-flow-tools.traceThis.mediatrOnly",
+        "title": "Trace This: MediatR Only",
+        "category": "DotnetFlowTools"
+      },
+      {
+        "command": "dotnet-flow-tools.selectModel",
+        "title": "Select AI Model",
+        "category": "DotnetFlowTools"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "dotnet-flow-tools.mainMenu",
+          "when": "editorLangId == 'csharp'",
+          "group": "1_document"
+        }
+      ],
+      "dotnet-flow-tools.mainMenu": [
+        {
+          "submenu": "dotnet-flow-tools.traceSubmenu",
+          "group": "1_document"
+        },
+        {
+          "command": "dotnet-flow-tools.documentThis",
+          "group": "1_document"
+        }
+      ],
+      "dotnet-flow-tools.traceSubmenu": [
+        {
+          "command": "dotnet-flow-tools.traceThis.all",
+          "group": "1_trace"
+        },
+        {
+          "command": "dotnet-flow-tools.traceThis.methodsOnly",
+          "group": "1_trace"
+        },
+        {
+          "command": "dotnet-flow-tools.traceThis.mediatrOnly",
+          "group": "1_trace"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "dotnet-flow-tools.mainMenu",
+        "label": "Dotnet Flow Tools"
+      },
+      {
+        "id": "dotnet-flow-tools.traceSubmenu",
+        "label": "Trace This"
+      }
+    ],
+    "configuration": {
+      "properties": {
+        "dotnetFlow.cliBuild": {
+          "type": "string",
+          "description": "Relative path of built CLI executable inside the extension",
+          "default": "${extensionPath}/cli/dotnet-flow"
+        },
+        "dotnetFlow.provider": {
+          "type": "string",
+          "enum": [
+            "built-in",
+            "bedrock"
+          ],
+          "default": "built-in",
+          "description": "AI model provider to use"
+        },
+        "dotnetFlow.modelId": {
+          "type": "string",
+          "default": "",
+          "description": "AI model ID (set via Select AI Model command)"
+        },
+        "dotnetFlow.awsProfile": {
+          "type": "string",
+          "default": "default",
+          "description": "AWS profile to use for Bedrock provider"
+        },
+        "dotnetFlow.awsRegion": {
+          "type": "string",
+          "default": "us-east-1",
+          "description": "AWS region to use for Bedrock provider"
+        },
+        "dotnetFlow.businessContext": {
+          "type": "string",
+          "default": "",
+          "maxLength": 4000,
+          "description": "Business domain context to improve documentation examples. Describe your specific business domain, product types, or industry context to generate more relevant examples.",
+          "editPresentation": "multilineText"
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "cli/**/*",
+    "prompts/**/*"
+  ],
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && pnpm run lint && pnpm run build:cli && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "build:cli": "pnpm run build:cli:osx-x64 && pnpm run build:cli:osx-arm64 && pnpm run build:cli:win",
+    "build:cli:osx-x64": "cd cli && dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o bin/osx-x64",
+    "build:cli:osx-arm64": "cd cli && dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true -o bin/osx-arm64",
+    "build:cli:win": "cd cli && dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o bin/win-x64",
+    "prebuild:cli": "rimraf cli/bin"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.698.0",
+    "@aws-sdk/credential-providers": "^3.698.0",
+    "common-tags": "^1.8.2",
+    "p-queue": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/common-tags": "^1.8.4",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.101.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.25.1",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.8.3"
+  },
+  "extensionRecommendations": [
+    "amazonwebservices.aws-toolkit-vscode"
+  ]
+}

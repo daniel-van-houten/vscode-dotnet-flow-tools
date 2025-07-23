@@ -1,0 +1,172 @@
+import * as vscode from 'vscode';
+import { IModelProvider, ModelInfo, ModelInvokeParams, ModelResponse } from './IModelProvider';
+import { RateLimiter } from './RateLimiter';
+import { BedrockTokenManager } from './BedrockTokenManager';
+
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+import { fromIni } from '@aws-sdk/credential-providers';
+
+export class BedrockProvider implements IModelProvider {
+  readonly id = 'bedrock';
+  private client: BedrockRuntimeClient | null = null;
+  private modelId: string = '';
+  private initialized = false;
+  // Note: Credential manager reserved for future AWS credential management
+  private rateLimiter: RateLimiter;
+  readonly tokenManager = new BedrockTokenManager();
+
+  // Hardcoded list of Bedrock models as per spec
+  private static readonly MODELS: ModelInfo[] = [
+    { id: 'us.anthropic.claude-sonnet-4-20250514-v1:0', name: 'Claude Sonnet 4', description: 'Anthropic - Claude Sonnet 4' },
+  ];
+
+  constructor() {
+    this.rateLimiter = RateLimiter.getInstance(1); // Conservative rate limiting for Bedrock
+  }
+
+  get currentModelId(): string {
+    return this.modelId;
+  }
+
+  async initialize(
+    config: vscode.WorkspaceConfiguration,
+    modelId: string
+  ): Promise<void> {
+    // Validate model ID only if one is provided
+    if (modelId && !BedrockProvider.MODELS.some(m => m.id === modelId)) {
+      throw new Error(`Invalid Bedrock model: ${modelId}. Available models: ${BedrockProvider.MODELS.map(m => m.id).join(', ')}`);
+    }
+
+    const region = config.get<string>('awsRegion', 'us-east-1');
+    const profile = config.get<string>('awsProfile', 'default');
+
+    // Store configuration for later use but don't validate credentials during initialization
+    // Credentials will be validated when actually invoking the model
+
+    try {
+      const clientConfig = {
+        region,
+        credentials: fromIni({ profile })
+      };
+      this.client = new BedrockRuntimeClient(clientConfig);
+
+      this.modelId = modelId || '';
+      this.initialized = true;
+
+      if (modelId) {
+        console.log(`Bedrock provider initialized with model: ${modelId}, region: ${region}`);
+      } else {
+        console.log(`Bedrock provider initialized without model selection, region: ${region}`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to initialize Bedrock client: ${error}`);
+    }
+  }
+
+  async listModels(): Promise<ModelInfo[]> {
+    // Return the static list of models
+    return BedrockProvider.MODELS;
+  }
+
+  async invoke(
+    messages: vscode.LanguageModelChatMessage[],
+    params?: ModelInvokeParams
+  ): Promise<ModelResponse> {
+    if (!this.client || !this.initialized) {
+      throw new Error('Bedrock provider not initialized. Call initialize() first.');
+    }
+
+    if (!this.modelId || this.modelId.trim() === '') {
+      throw new Error('No Bedrock model selected. Please select a model using the "Select AI Model" command.');
+    }
+
+    // Validate credentials before making the actual call
+    // This is where we check if the user has configured AWS credentials
+    // For now, we'll just show a helpful error message since the AWS SDK isn't installed yet
+
+    // Convert VS Code messages to Bedrock format
+    const converseMessages = messages.map(msg => {
+      // Convert VS Code's complex content array to simple text
+      let textContent = '';
+      if (typeof msg.content === 'string') {
+        textContent = msg.content;
+      } else {
+        // Handle array of content parts
+        textContent = msg.content.map(part => {
+          if ('value' in part) {
+            return part.value;
+          }
+          // For other part types, try to extract text content
+          return '';
+        }).join('');
+      }
+
+      return {
+        role: msg.role === vscode.LanguageModelChatMessageRole.User ? 'user' as const : 'assistant' as const,
+        content: [{ text: textContent }]
+      };
+    });
+
+    // Use model's max output tokens if not specified in params
+    const maxOutputTokens = this.tokenManager.getMaxOutputTokens(this.modelId);
+
+    const command = new ConverseCommand({
+      modelId: this.modelId,
+      messages: converseMessages,
+      inferenceConfig: {
+        maxTokens: params?.maxTokens ?? maxOutputTokens,
+        temperature: params?.temperature ?? 0.7,
+        topP: params?.topP ?? 0.9,
+        stopSequences: params?.stopSequences
+      }
+    });
+
+    try {
+      if (!this.client) {
+        throw new Error('Bedrock client not initialized');
+      }
+
+      const response = await this.rateLimiter.add(() => this.client!.send(command));
+
+      const text = response.output?.message?.content?.[0]?.text || '';
+
+      // Convert to async iterable to match VS Code's format
+      const textIterable = async function* () {
+        yield text;
+      };
+
+      return {
+        text: textIterable(),
+        totalTokens: (response as any)?.usage?.totalTokens
+      };
+    } catch (error: any) {
+      // Handle Bedrock-specific errors
+      if (error.name === 'ResourceNotFoundException') {
+        throw new Error(`Model ${this.modelId} not found or not available in your region`);
+      } else if (error.name === 'ThrottlingException') {
+        // Implement exponential backoff for throttling
+        const delay = Math.min(1000 * Math.pow(2, Math.floor(Math.random() * 4)), 30000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        throw new Error('Request throttled. Please wait a moment and try again.');
+      } else if (error.name === 'ValidationException') {
+        throw new Error(`Invalid request parameters: ${error.message}`);
+      } else if (error.name === 'AccessDeniedException') {
+        throw new Error('Access denied. Please check your AWS credentials and IAM permissions.');
+      } else if (error.name === 'InternalServerException') {
+        throw new Error('AWS service temporarily unavailable. Please try again later.');
+      } else {
+        throw new Error(`Bedrock provider error: ${error.message}`);
+      }
+    }
+  }
+
+  dispose(): void {
+    this.client = null;
+    this.initialized = false;
+    this.modelId = '';
+  }
+
+  isInitialized(): boolean {
+    return this.initialized && this.client !== null;
+  }
+}
