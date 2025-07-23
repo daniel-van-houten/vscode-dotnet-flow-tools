@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { IModelProvider, ModelInfo, ModelInvokeParams, ModelResponse } from './IModelProvider';
 import { BuiltInTokenManager } from './BuiltInTokenManager';
+import { BuiltInProviderError } from '../core/ErrorTypes';
 
 export class BuiltInProvider implements IModelProvider {
   readonly id = 'built-in';
@@ -21,7 +22,7 @@ export class BuiltInProvider implements IModelProvider {
     if (!modelId) {
       const [fallback] = await vscode.lm.selectChatModels({ vendor: 'copilot' });
       if (!fallback) {
-        throw new Error('No Copilot models available. Please ensure GitHub Copilot is installed and you have given consent to use AI features.');
+        throw BuiltInProviderError.modelUnavailable();
       }
       this.model = fallback;
     } else {
@@ -33,7 +34,7 @@ export class BuiltInProvider implements IModelProvider {
         // Fall back to any Copilot model if specific model not found
         const [fallback] = await vscode.lm.selectChatModels({ vendor: 'copilot' });
         if (!fallback) {
-          throw new Error(`Model '${modelId}' not found and no fallback Copilot models available.`);
+          throw BuiltInProviderError.modelUnavailable(modelId);
         }
         this.model = fallback;
         console.warn(`Model '${modelId}' not found, falling back to ${fallback.name || fallback.id}`);
@@ -68,7 +69,7 @@ export class BuiltInProvider implements IModelProvider {
     cancellationToken?: vscode.CancellationToken
   ): Promise<ModelResponse> {
     if (!this.model || !this.initialized) {
-      throw new Error('Provider not initialized. Call initialize() first.');
+      throw new BuiltInProviderError('Provider not initialized. Call initialize() first.', 'NOT_INITIALIZED');
     }
 
     // Convert our generic params to VS Code specific options
@@ -91,22 +92,25 @@ export class BuiltInProvider implements IModelProvider {
         totalTokens: undefined
       };
     } catch (error) {
+      // Re-throw BuiltInProviderError instances
+      if (error instanceof BuiltInProviderError) {
+        throw error;
+      }
+
       if (error instanceof vscode.LanguageModelError) {
-        // Re-throw with more context
-        let errorMessage = `Built-in provider failed: ${error.message}`;
-        
+        // Handle VS Code specific language model errors
         if (error.message.includes('consent') || error.message.includes('permission')) {
-          errorMessage = 'Please give consent to use AI features in VS Code.';
+          throw BuiltInProviderError.consentRequired();
         } else if (error.message.includes('blocked') || error.message.includes('content policy')) {
-          errorMessage = 'Request was blocked by content policy. Please try with different content.';
+          throw BuiltInProviderError.contentBlocked();
         } else if (error.message.includes('throttled') || error.message.includes('rate limit')) {
-          errorMessage = 'Too many requests. Please wait a moment and try again.';
+          throw BuiltInProviderError.rateLimited();
+        } else {
+          throw new BuiltInProviderError(`Built-in provider failed: ${error.message}`, 'UNKNOWN_VS_CODE_ERROR', error);
         }
-        
-        throw new Error(errorMessage);
       }
       
-      throw error;
+      throw new BuiltInProviderError(`Unexpected error: ${error}`, 'UNKNOWN_ERROR', error as Error);
     }
   }
 

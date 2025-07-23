@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { IModelProvider, ModelInfo, ModelInvokeParams, ModelResponse } from './IModelProvider';
 import { RateLimiter } from './RateLimiter';
 import { BedrockTokenManager } from './BedrockTokenManager';
+import { BedrockProviderError } from '../core/ErrorTypes';
 
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { fromIni } from '@aws-sdk/credential-providers';
@@ -34,7 +35,7 @@ export class BedrockProvider implements IModelProvider {
   ): Promise<void> {
     // Validate model ID only if one is provided
     if (modelId && !BedrockProvider.MODELS.some(m => m.id === modelId)) {
-      throw new Error(`Invalid Bedrock model: ${modelId}. Available models: ${BedrockProvider.MODELS.map(m => m.id).join(', ')}`);
+      throw BedrockProviderError.modelNotFound(modelId);
     }
 
     const region = config.get<string>('awsRegion', 'us-east-1');
@@ -59,7 +60,10 @@ export class BedrockProvider implements IModelProvider {
         console.log(`Bedrock provider initialized without model selection, region: ${region}`);
       }
     } catch (error) {
-      throw new Error(`Failed to initialize Bedrock client: ${error}`);
+      if (error instanceof BedrockProviderError) {
+        throw error;
+      }
+      throw new BedrockProviderError(`Failed to initialize Bedrock client: ${error}`, 'INITIALIZATION_FAILED', error as Error);
     }
   }
 
@@ -73,11 +77,11 @@ export class BedrockProvider implements IModelProvider {
     params?: ModelInvokeParams
   ): Promise<ModelResponse> {
     if (!this.client || !this.initialized) {
-      throw new Error('Bedrock provider not initialized. Call initialize() first.');
+      throw new BedrockProviderError('Bedrock provider not initialized. Call initialize() first.', 'NOT_INITIALIZED');
     }
 
     if (!this.modelId || this.modelId.trim() === '') {
-      throw new Error('No Bedrock model selected. Please select a model using the "Select AI Model" command.');
+      throw new BedrockProviderError('No Bedrock model selected. Please select a model using the "Select AI Model" command.', 'MODEL_NOT_SELECTED');
     }
 
     // Validate credentials before making the actual call
@@ -123,7 +127,7 @@ export class BedrockProvider implements IModelProvider {
 
     try {
       if (!this.client) {
-        throw new Error('Bedrock client not initialized');
+        throw new BedrockProviderError('Bedrock client not initialized', 'CLIENT_NOT_INITIALIZED');
       }
 
       const response = await this.rateLimiter.add(() => this.client!.send(command));
@@ -140,22 +144,29 @@ export class BedrockProvider implements IModelProvider {
         totalTokens: (response as any)?.usage?.totalTokens
       };
     } catch (error: any) {
-      // Handle Bedrock-specific errors
+      // Re-throw BedrockProviderError instances
+      if (error instanceof BedrockProviderError) {
+        throw error;
+      }
+
+      // Handle AWS Bedrock-specific errors
       if (error.name === 'ResourceNotFoundException') {
-        throw new Error(`Model ${this.modelId} not found or not available in your region`);
+        throw BedrockProviderError.modelNotFound(this.modelId);
       } else if (error.name === 'ThrottlingException') {
         // Implement exponential backoff for throttling
         const delay = Math.min(1000 * Math.pow(2, Math.floor(Math.random() * 4)), 30000);
         await new Promise(resolve => setTimeout(resolve, delay));
-        throw new Error('Request throttled. Please wait a moment and try again.');
+        throw BedrockProviderError.throttled();
       } else if (error.name === 'ValidationException') {
-        throw new Error(`Invalid request parameters: ${error.message}`);
+        throw BedrockProviderError.invalidRequest(error.message);
       } else if (error.name === 'AccessDeniedException') {
-        throw new Error('Access denied. Please check your AWS credentials and IAM permissions.');
+        throw BedrockProviderError.accessDenied();
+      } else if (error.name === 'UnauthorizedException' || error.name === 'TokenRefreshRequiredException') {
+        throw BedrockProviderError.tokenExpired();
       } else if (error.name === 'InternalServerException') {
-        throw new Error('AWS service temporarily unavailable. Please try again later.');
+        throw BedrockProviderError.serviceUnavailable();
       } else {
-        throw new Error(`Bedrock provider error: ${error.message}`);
+        throw new BedrockProviderError(`Bedrock provider error: ${error.message}`, 'UNKNOWN_ERROR', error);
       }
     }
   }
