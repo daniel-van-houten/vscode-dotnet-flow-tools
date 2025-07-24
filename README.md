@@ -4,38 +4,42 @@
 
 Dotnet Flow Tools is a Visual Studio Code extension that bridges the gap between technical .NET code and business understanding. It analyzes your .NET codebase and generates comprehensive documentation that explains what your code does in business terms, making it invaluable for developers, business analysts, and technical writers.
 
+## Why Not Just Use Copilot or Other Agentic Extensions?
+
+**Copilot analyzes code as intelligent text. This extension analyzes code as the compiler sees it.**
+
+While GitHub Copilot and similar AI tools excel at code generation and can answer questions across multiple files, they fundamentally treat your codebase as sophisticated text. This extension uses **Microsoft.CodeAnalysis (Roslyn)** to understand your code with true semantic analysis:
+
+- **Precise Call Graphs**: Traces exact execution paths through complex architectures, not text-based guesses
+- **Runtime Pattern Resolution**: Understands MediatR handlers, CQRS patterns, and polymorphic dispatch at the compiler level
+- **Assembly-Aware Analysis**: Focuses on your business logic, filtering out framework noise
+- **Solution-Wide Compilation Context**: Works with compiled semantic models, understanding cross-project dependencies that text analysis misses
+
+**The Result**: Generate comprehensive business documentation that explains *exactly* what your technical processes do, with precision that's impossible from text-pattern analysis alone.
+
 ## 🚀 Features
 
-### 📝 Document This
-Generate comprehensive business documentation from any C# method with a single command. The extension:
-- Analyzes method dependencies and call chains
-- Creates business-friendly explanations of technical processes
-- Includes relevant examples based on your business domain
-- Supports intelligent chunking for large codebases
+### Document Generation
+Right-click any C# method → **"Document This"** to generate comprehensive business documentation with call chain analysis and domain-specific examples.
 
-### 🔍 Trace This (Multiple Options)
-Visualize code execution flows with different levels of detail:
-- **All Traces**: Complete detailed analysis including all dependencies
-- **Methods Only**: Focus on method calls and business logic flow
-- **MediatR Only**: Specialized tracing filtering to only MediatR command/query handlers
+### Code Flow Visualization
+Right-click any C# method → **"Trace This"** to visualize execution flows:
+- **All**: Complete detailed flow including POCOs/DTOs
+- **Methods Only**: Filters to just method bodies 
+- **MediatR Only**: Filters to only MediatR handlers
 
-### 🤖 AI Model Support
-- **Built-in Provider**: Uses VSCode's built-in language models
-- **AWS Bedrock**: Support for Claude, Titan, and other Bedrock models
-- **Smart Model Selection**: Easy switching between different AI providers
+### AI Model Support
+Built-in VSCode models or AWS Bedrock with easy model switching.
 
-### 🧠 Intelligent Processing
-- **Smart Chunking**: Automatically handles large codebases by breaking them into manageable chunks
-- **Business Context**: Customizable domain context for generating relevant examples
-- **Progress Tracking**: Real-time feedback during documentation generation
+### Intelligent Processing
+Smart chunking for large codebases, business context integration, and progress tracking.
 
-## 📋 Requirements
-
+## Requirements
+- **Mermaid**: Install the Mermaid Chart extension to view the generated diagrams.  
 - **.NET Solution**: Your project must contain a `.sln` solution file
-- **C# Projects**: Extension activates automatically when working with C# files
 - **AI Provider**: Either built-in VSCode language models or AWS Bedrock access
 
-## 🎯 Getting Started
+## Getting Started
 
 ### 1. Install the Extension
 Install "Dotnet Flow Tools" Extension
@@ -53,7 +57,7 @@ Install "Dotnet Flow Tools" Extension
 3. Add your business domain context in the `Business Context` field. This helps generate accurate examples in the docs. 
 
 ### 4. Generate Your First Documentation
-1. Open a C# file in a .NET solution
+1. Open a C# file in a .NET Core or .Net 6.0+ solution
 2. Place your cursor inside any method
 3. Right-click and select `Dotnet Flow Tools > Document This`
 4. Wait for the AI to generate comprehensive documentation
@@ -85,7 +89,7 @@ records, appointment scheduling, billing workflows, and
 HIPAA compliance requirements.
 ```
 
-## 🎮 Usage
+## Usage
 
 ### Document This Command
 1. **Navigate** to any C# method in your solution
@@ -111,7 +115,7 @@ Dotnet Flow Tools
     └── MediatR Only
 ```
 
-## 🔧 AI Provider Setup
+## AI Model Provider Setup
 
 ### Built-in Provider (Recommended for Getting Started)
 1. Run `DotnetFlowTools: Select AI Model`
@@ -119,44 +123,32 @@ Dotnet Flow Tools
 3. Select from available VSCode language models
 4. Start generating documentation immediately
 
-> **⚠️ Token Usage Warning**: This extension can consume significant tokens, especially when processing large codebases or using the "Document This" feature on complex methods. If you're using GitHub Copilot's built-in provider, monitor your token usage carefully as it may impact your quota or billing.
+
+> **⚠️ Token Usage with GitHub Copilot**: This extension can consume significant tokens when using the "Document This" feature on methods which highly complex call chains. Here's what you need to know about GitHub Copilot's token usage:
+>
+> **For paid Copilot plans (Pro/Business/Enterprise)**: GPT-4o and GPT-4.1 have a 0× multiplier, so they don't consume premium requests from your budget. However, you're still subject to soft rate limits, token/throughput caps.
+>
+> **For Copilot Free tier**: Every use still burns your limited premium requests, regardless of the model.
+>
+> **What this means in practice:**
+> - **Copilot Pro/Business/Enterprise**: Use GPT-4.1 or GPT-4o as much as you want without touching your premium request pool; you may just hit temporary rate limits if you hammer it.
+> - **Copilot Free**: All requests still decrement your monthly allotment.
+> - **Org plans**: There can also be org-wide throttles/policies.
+>
+> **When you need to worry**: If you switch to models with a multiplier > 0 (e.g., Claude Sonnet/Opus, Gemini Pro), those will spend your premium requests. This is fine, just keep an eye on it.
+>
+> **💡 Tip**: Set GPT-4.1 as your default, and only switch to the pricier models when you truly need their longer context or different reasoning style. Track your usage under Settings → GitHub Copilot → Usage & spending.
 
 ### AWS Bedrock Provider
 1. **Install AWS Toolkit**: Install the AWS Toolkit for Visual Studio Code extension
 2. **Configure AWS Credentials**: Set up your AWS profile with Bedrock access
 3. **Configure Extension**:
-   - Set `dotnetFlow.provider` to `bedrock`
    - Set `dotnetFlow.awsProfile` to your AWS profile name
    - Set `dotnetFlow.awsRegion` to your preferred region
 4. **Select Model**: Run `DotnetFlowTools: Select AI Model` and choose a Bedrock model
 
 #### Supported Bedrock Models
-- **Claude 3/4 (Anthropic)**: Excellent for detailed technical documentation
-
-## 💡 Tips and Best Practices
-
-### When to Use Different Trace Types
-- **All Traces**: Use for comprehensive analysis of complex business processes
-- **Methods Only**: Best for understanding high-level workflow and business logic
-- **MediatR Only**: Perfect for CQRS architectures and command/query patterns
-
-### Writing Effective Business Context
-- **Be Specific**: Include industry-specific terms and concepts
-- **Include Key Entities**: Mention important business objects and their relationships
-- **Describe Workflows**: Explain common business processes in your domain
-- **Keep It Concise**: Aim for 2-4 sentences that capture your domain essence
-
-### Working with Large Codebases
-- The extension automatically detects when chunking is needed
-- You'll be prompted before processing large traces
-- Chunked processing provides better quality results for complex code
-- Each chunk is processed intelligently to maintain context
-
-### Optimizing Results
-- **Position Matters**: Place your cursor in the most relevant method for your use case
-- **Business Context**: Always configure business context for domain-specific examples
-- **Method Selection**: Choose methods that represent complete business workflows
-- **Review Output**: Generated documentation opens in both text and preview modes
+- **Claude (Anthropic)**: Excellent for highly complex code
 
 ## 🚨 Troubleshooting
 
@@ -182,7 +174,17 @@ The extension generates markdown documentation that includes:
 
 ## 🔄 Release Notes
 
+### 1.0.4
+- Limited models available to Built-In model provider to realistically usable models.
+- Optimized input limits for built-in models  
+- Added option to use Claude 3.5 model via Amazon Bedrock
+- Fixed issue where Bedrock provider was attempting to initialize before it was seleted. 
+- Improved error messaging.
+
 ### 1.0.3
+- Updated docs
+
+### 1.0.2
 - Fixed Windows compatibility issues with Unicode symbols in CLI output
 
 ### 0.0.1

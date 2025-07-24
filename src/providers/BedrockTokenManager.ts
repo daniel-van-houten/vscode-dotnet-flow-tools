@@ -6,28 +6,9 @@ export class BedrockTokenManager implements ITokenManager {
   // Bedrock model token limits based on AWS documentation
   private static readonly MODEL_LIMITS: ModelTokenLimits[] = [
 
-    // Amazon Nova models
-    { modelId: 'amazon.nova-lite-v1:0', maxInput: 300000, maxOutput: 5000, contextWindow: 300000, estimationRatio: 4 },
-    { modelId: 'amazon.nova-micro-v1:0', maxInput: 128000, maxOutput: 5000, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'amazon.nova-premier-v1:0', maxInput: 300000, maxOutput: 5000, contextWindow: 300000, estimationRatio: 4 },
-    { modelId: 'amazon.nova-pro-v1:0', maxInput: 300000, maxOutput: 5000, contextWindow: 300000, estimationRatio: 4 },
-
     // Anthropic Claude models
-    { modelId: 'us.anthropic.claude-sonnet-4-20250514-v1:0', maxInput: 130000, maxOutput: 8000, contextWindow: 200000, estimationRatio: 3.5 },
-
-    // Cohere models
-    { modelId: 'cohere.command-r-plus-v1:0', maxInput: 128000, maxOutput: 4000, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'cohere.command-r-v1:0', maxInput: 128000, maxOutput: 4000, contextWindow: 128000, estimationRatio: 4 },
-
-    // Meta Llama models
-    { modelId: 'meta.llama3-1-405b-instruct-v1:0', maxInput: 128000, maxOutput: 2048, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'meta.llama3-1-70b-instruct-v1:0', maxInput: 128000, maxOutput: 2048, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'meta.llama3-1-8b-instruct-v1:0', maxInput: 128000, maxOutput: 2048, contextWindow: 128000, estimationRatio: 4 },
-
-    // Mistral models
-    { modelId: 'mistral.mistral-7b-instruct-v0:2', maxInput: 32000, maxOutput: 8192, contextWindow: 32000, estimationRatio: 4 },
-    { modelId: 'mistral.mistral-large-2407-v1:0', maxInput: 128000, maxOutput: 8192, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'mistral.mixtral-8x7b-instruct-v0:1', maxInput: 32000, maxOutput: 8192, contextWindow: 32000, estimationRatio: 4 }
+    { modelId: 'us.anthropic.claude-sonnet-4-20250514-v1:0', maxInput: 160000, maxOutput: 8000, contextWindow: 200000, estimationRatio: 3.5 },
+    { modelId: 'us.anthropic.claude-3-5-sonnet-20240620-v1:0', maxInput: 160000, maxOutput: 8000, contextWindow: 200000, estimationRatio: 3.5 }
   ];
 
   private static readonly DEFAULT_LIMITS: ModelTokenLimits = {

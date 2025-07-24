@@ -100,8 +100,12 @@ export class SelectModelCommand extends BaseCommand {
       const aIsCurrent = a.label.startsWith('$(check)');
       const bIsCurrent = b.label.startsWith('$(check)');
       
-      if (aIsCurrent && !bIsCurrent) return -1;
-      if (!aIsCurrent && bIsCurrent) return 1;
+      if (aIsCurrent && !bIsCurrent) {
+        return -1;
+      }
+      if (!aIsCurrent && bIsCurrent) {
+        return 1;
+      }
       
       if (a.providerId !== b.providerId) {
         return a.providerId.localeCompare(b.providerId);

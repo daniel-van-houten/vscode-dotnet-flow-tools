@@ -1,5 +1,6 @@
 .DS_Store
 *.visx
+CLAUDE.md
 
 # .NET
 bin/

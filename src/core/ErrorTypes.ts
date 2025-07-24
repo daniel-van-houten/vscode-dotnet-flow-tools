@@ -98,6 +98,20 @@ export class BedrockProviderError extends ProviderError {
       'SERVICE_UNAVAILABLE'
     );
   }
+
+  static modelNotSelected(): BedrockProviderError {
+    return new BedrockProviderError(
+      'No AI model selected. Please use the "Select AI Model" command to choose a Bedrock model before generating documentation.',
+      'MODEL_NOT_SELECTED'
+    );
+  }
+
+  static credentialsNotConfigured(): BedrockProviderError {
+    return new BedrockProviderError(
+      'AWS credentials not configured. Please configure your AWS credentials or select a different AI provider. You can use the "Select AI Model" command to choose from available options.',
+      'CREDENTIALS_NOT_CONFIGURED'
+    );
+  }
 }
 
 /**

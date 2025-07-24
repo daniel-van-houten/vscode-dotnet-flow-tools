@@ -7,14 +7,9 @@ export class BuiltInTokenManager implements ITokenManager {
   // Common token limits for VS Code Language Model API providers
   private static readonly MODEL_LIMITS: ModelTokenLimits[] = [
     // GitHub Copilot models (estimated limits based on known models)
-    { modelId: 'gpt-4o', maxInput: 128000, maxOutput: 4096, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'gpt-4o-mini', maxInput: 128000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'gpt-4-turbo', maxInput: 128000, maxOutput: 4096, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'gpt-4', maxInput: 8192, maxOutput: 4096, contextWindow: 8192, estimationRatio: 4 },
-    { modelId: 'gpt-3.5-turbo', maxInput: 16385, maxOutput: 4096, contextWindow: 16385, estimationRatio: 4 },
-    { modelId: 'claude-3-5-sonnet', maxInput: 200000, maxOutput: 8192, contextWindow: 200000, estimationRatio: 3.5 },
-    { modelId: 'claude-3-opus', maxInput: 200000, maxOutput: 4096, contextWindow: 200000, estimationRatio: 3.5 },
-    { modelId: 'claude-3-haiku', maxInput: 200000, maxOutput: 4096, contextWindow: 200000, estimationRatio: 3.5 }
+    { modelId: 'gpt-4o', maxInput: 110000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
+    { modelId: 'gpt-4.1', maxInput: 110000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
+    { modelId: 'claude-3-5-sonnet', maxInput: 110000, maxOutput: 8192, contextWindow: 200000, estimationRatio: 3.5 },
   ];
 
   private static readonly DEFAULT_LIMITS: ModelTokenLimits = {

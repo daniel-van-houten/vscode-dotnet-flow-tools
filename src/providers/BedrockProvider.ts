@@ -19,6 +19,7 @@ export class BedrockProvider implements IModelProvider {
   // Hardcoded list of Bedrock models as per spec
   private static readonly MODELS: ModelInfo[] = [
     { id: 'us.anthropic.claude-sonnet-4-20250514-v1:0', name: 'Claude Sonnet 4', description: 'Anthropic - Claude Sonnet 4' },
+    { id: 'us.anthropic.claude-3-5-sonnet-20240620-v1:0', name: 'Claude Sonnet 3.5', description: 'Anthropic - Claude Sonnet 3.5' },
   ];
 
   constructor() {
@@ -31,11 +32,23 @@ export class BedrockProvider implements IModelProvider {
 
   async initialize(
     config: vscode.WorkspaceConfiguration,
-    modelId: string
+    modelId: string,
+    context?: vscode.ExtensionContext
   ): Promise<void> {
     // Validate model ID only if one is provided
     if (modelId && !BedrockProvider.MODELS.some(m => m.id === modelId)) {
       throw BedrockProviderError.modelNotFound(modelId);
+    }
+
+    // If no model is selected, don't initialize AWS client yet but show helpful guidance
+    if (!modelId || modelId.trim() === '') {
+      this.modelId = '';
+      this.initialized = true;
+      console.log('Bedrock provider initialized without model selection - AWS client will be created when model is selected');
+      
+      // Show user-friendly guidance for model selection
+      this.showModelSelectionGuidance();
+      return;
     }
 
     const region = config.get<string>('awsRegion', 'us-east-1');
@@ -51,18 +64,21 @@ export class BedrockProvider implements IModelProvider {
       };
       this.client = new BedrockRuntimeClient(clientConfig);
 
-      this.modelId = modelId || '';
+      this.modelId = modelId;
       this.initialized = true;
 
-      if (modelId) {
-        console.log(`Bedrock provider initialized with model: ${modelId}, region: ${region}`);
-      } else {
-        console.log(`Bedrock provider initialized without model selection, region: ${region}`);
-      }
+      console.log(`Bedrock provider initialized with model: ${modelId}, region: ${region}`);
     } catch (error) {
       if (error instanceof BedrockProviderError) {
         throw error;
       }
+      
+      // Handle credential-specific errors more gracefully
+      if (error instanceof Error && error.message.includes('Could not resolve credentials')) {
+        this.showCredentialConfigurationGuidance();
+        throw BedrockProviderError.credentialsNotConfigured();
+      }
+      
       throw new BedrockProviderError(`Failed to initialize Bedrock client: ${error}`, 'INITIALIZATION_FAILED', error as Error);
     }
   }
@@ -76,12 +92,18 @@ export class BedrockProvider implements IModelProvider {
     messages: vscode.LanguageModelChatMessage[],
     params?: ModelInvokeParams
   ): Promise<ModelResponse> {
-    if (!this.client || !this.initialized) {
+    if (!this.initialized) {
       throw new BedrockProviderError('Bedrock provider not initialized. Call initialize() first.', 'NOT_INITIALIZED');
     }
 
     if (!this.modelId || this.modelId.trim() === '') {
-      throw new BedrockProviderError('No Bedrock model selected. Please select a model using the "Select AI Model" command.', 'MODEL_NOT_SELECTED');
+      this.showModelNotSelectedGuidance();
+      throw BedrockProviderError.modelNotSelected();
+    }
+
+    // Initialize AWS client now if it wasn't done during initialization (model was selected later)
+    if (!this.client) {
+      throw new BedrockProviderError('AWS client not initialized. This may indicate a configuration issue.', 'CLIENT_NOT_INITIALIZED');
     }
 
     // Validate credentials before making the actual call
@@ -179,5 +201,70 @@ export class BedrockProvider implements IModelProvider {
 
   isInitialized(): boolean {
     return this.initialized && this.client !== null;
+  }
+
+  /**
+   * Shows user-friendly guidance for selecting a Bedrock model
+   */
+  private showModelSelectionGuidance(): void {
+    vscode.window.showInformationMessage(
+      'Bedrock provider is ready. Use the "Select AI Model" command to choose a model before generating documentation.',
+      'Select AI Model'
+    ).then(selection => {
+      if (selection === 'Select AI Model') {
+        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
+      }
+    });
+  }
+
+  /**
+   * Shows user-friendly guidance for credential configuration issues
+   */
+  private showCredentialConfigurationGuidance(): void {
+    vscode.window.showWarningMessage(
+      'AWS credentials not configured for Bedrock. Configure credentials or select a different provider.',
+      'Select Different Provider',
+      'Configure AWS'
+    ).then(selection => {
+      if (selection === 'Select Different Provider') {
+        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
+      } else if (selection === 'Configure AWS') {
+        vscode.env.openExternal(vscode.Uri.parse('https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html'));
+      }
+    });
+  }
+
+  /**
+   * Shows user-friendly guidance when no model is selected during usage
+   */
+  private showModelNotSelectedGuidance(): void {
+    vscode.window.showInformationMessage(
+      'No AI model selected. Please select a Bedrock model to use this provider.',
+      'Select AI Model',
+      'Use Built-in Provider'
+    ).then(selection => {
+      if (selection === 'Select AI Model') {
+        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
+      } else if (selection === 'Use Built-in Provider') {
+        vscode.workspace.getConfiguration('dotnetFlow').update('provider', 'built-in', vscode.ConfigurationTarget.Global);
+      }
+    });
+  }
+
+  /**
+   * Shows user-friendly guidance when this provider fails and system falls back to built-in
+   */
+  showFallbackGuidance(): void {
+    vscode.window.showWarningMessage(
+      'Bedrock provider setup incomplete. You can select a Bedrock model and configure AWS credentials later.',
+      'Select AI Model',
+      'Configure AWS'
+    ).then(selection => {
+      if (selection === 'Select AI Model') {
+        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
+      } else if (selection === 'Configure AWS') {
+        vscode.env.openExternal(vscode.Uri.parse('https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html'));
+      }
+    });
   }
 }

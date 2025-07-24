@@ -43,11 +43,11 @@ export async function initializeProviderSystem(
   
   try {
     await registry.initializeProvider(providerId, config, modelId, context);
-    console.log(`Provider system initialized with provider: ${providerId}, model: ${modelId}`);
+    console.log(`Provider system initialized with provider: ${providerId}, model: ${modelId || 'none'}`);
   } catch (error) {
     console.error('Failed to initialize provider system:', error);
     
-    // Fall back to built-in provider if available
+    // Generic fallback to built-in provider for any initialization failure
     if (providerId !== 'built-in' && registry.hasProvider('built-in')) {
       console.log('Falling back to built-in provider');
       try {
@@ -56,17 +56,11 @@ export async function initializeProviderSystem(
         // Update configuration to reflect the fallback
         await config.update('provider', 'built-in', vscode.ConfigurationTarget.Global);
         
-        // Provide a more helpful error message based on the provider type
-        let errorMessage = `Failed to initialize ${providerId} provider. Falling back to built-in provider.`;
-        if (providerId === 'bedrock') {
-          if (error instanceof Error && error.message.includes('model')) {
-            errorMessage = 'Bedrock provider initialized successfully. Use "Select AI Model" command to choose a Bedrock model.';
-          } else {
-            errorMessage = 'Bedrock provider setup incomplete. You can select a Bedrock model and configure AWS credentials later.';
-          }
+        // Let the failed provider show its own fallback guidance
+        const failedProvider = registry.getProvider(providerId);
+        if (failedProvider && 'showFallbackGuidance' in failedProvider) {
+          (failedProvider as any).showFallbackGuidance();
         }
-        
-        vscode.window.showWarningMessage(errorMessage);
       } catch (fallbackError) {
         console.error('Failed to initialize fallback provider:', fallbackError);
         throw new Error(`Failed to initialize any provider: ${error}`);
