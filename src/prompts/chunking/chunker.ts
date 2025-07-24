@@ -1,5 +1,5 @@
 import { ParsedTrace, ChunkInfo, CodeSection } from './types';
-import { getComponentContent } from '../template-builder/components';
+import { getComponentContent } from '../template-builder/component-registry';
 import { PromptBuildContext } from '../template-builder/types';
 import { IModelProvider } from '../../providers/IModelProvider';
 import { chunkingDecisionEngine } from './ChunkingDecisionEngine';

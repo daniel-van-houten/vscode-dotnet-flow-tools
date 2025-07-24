@@ -4,12 +4,16 @@ import { ServiceContainer, ServiceKeys } from './core/ServiceContainer';
 import { CommandRegistry } from './commands/CommandRegistry';
 import { initializeProviderSystem, ProviderRegistry } from './providers';
 import { ILogger } from './core/Logger';
+import { ContentLoader } from './prompts/template-builder/content-loader';
 
 // Global service container
 let serviceContainer: ServiceContainer;
 let commandRegistry: CommandRegistry;
 
 export async function activate(context: vscode.ExtensionContext) {
+  // Initialize content loader with extension context
+  ContentLoader.initialize(context);
+  
   // Setup services
   serviceContainer = setupServices(context);
   const logger = serviceContainer.get<ILogger>(ServiceKeys.LOGGER);
@@ -97,4 +101,3 @@ export function deactivate() {
     serviceContainer.clear();
   }
 }
-

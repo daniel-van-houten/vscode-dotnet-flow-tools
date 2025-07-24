@@ -1,6 +1,8 @@
+/**
+ * Simplified prompt component interface (replaces IStaticComponent, IDynamicComponent, IConditionalComponent)
+ */
 export interface PromptComponent {
-  content: string | ((context: any) => string);
-  estimatedTokens?: number | ((context: any) => number);
+  content: string | ((context: PromptBuildContext) => string);
 }
 
 export interface PromptBuildContext {

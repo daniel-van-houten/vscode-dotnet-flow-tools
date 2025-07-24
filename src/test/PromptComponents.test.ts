@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { promptComponents, getComponentContent } from '../prompts/template-builder/components';
+import { promptComponents, getComponentContent } from '../prompts/template-builder/component-registry';
 import { PromptBuildContext } from '../prompts/template-builder/types';
 import { PromptTemplateProcessor } from '../prompts/template-builder/template-processor';
 

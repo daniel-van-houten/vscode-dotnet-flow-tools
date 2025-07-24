@@ -6,7 +6,3 @@ export type { ProcessingContext, ProcessingResult, AnalysisResult } from './type
 
 // Error exports for consumers who need to handle specific errors
 export { TraceValidationError, TokenLimitExceededError } from './errors';
-
-// Strategy exports for advanced users who might want to extend
-export type { IProcessingStrategy } from './strategies';
-export { SingleShotStrategy, ChunkedStrategy } from './strategies';

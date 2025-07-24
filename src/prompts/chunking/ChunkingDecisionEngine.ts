@@ -1,8 +1,19 @@
 import { IModelProvider } from '../../providers/IModelProvider';
 import { templateProcessor, PromptBuildContext } from '../template-builder';
 import { ParsedTrace } from './types';
-import { getComponentContent } from '../template-builder/components';
-import { PROCESSING_CONFIG } from './config';
+import { getComponentContent } from '../template-builder/component-registry';
+
+// Helper function to build complete trace content
+function buildCompleteTraceContent(parsedTrace: ParsedTrace): string {
+  const { callGraph, codeSections } = parsedTrace;
+  const codeContent = codeSections.map(s => s.content).join('\n\n');
+
+  return `${callGraph}
+
+<!-- CODE-BEGIN -->
+${codeContent}
+<!-- CODE-END -->`;
+}
 
 export interface ChunkingAnalysis {
   needsChunking: boolean;
@@ -50,7 +61,7 @@ export class ChunkingDecisionEngine {
     provider: IModelProvider,
     context?: { className: string; methodName: string }
   ): Promise<ChunkingAnalysis> {
-    const completeContent = this.buildCompleteTraceContent(parsedTrace);
+    const completeContent = buildCompleteTraceContent(parsedTrace);
     const needsChunking = await this.shouldChunk(completeContent, provider);
 
     if (!needsChunking) {
@@ -151,19 +162,6 @@ export class ChunkingDecisionEngine {
     };
   }
 
-  /**
-   * Build complete trace content as it would appear in a single-shot prompt
-   */
-  private buildCompleteTraceContent(parsedTrace: ParsedTrace): string {
-    const { callGraph, codeSections } = parsedTrace;
-    const codeContent = codeSections.map(s => s.content).join('\n\n');
-
-    return `${callGraph}
-
-<!-- CODE-BEGIN -->
-${codeContent}
-<!-- CODE-END -->`;
-  }
 
   /**
    * Build recommendation message for users
