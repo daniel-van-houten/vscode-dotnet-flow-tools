@@ -174,17 +174,17 @@ The extension generates markdown documentation that includes:
 
 ## 🔄 Release Notes
 
-### 1.0.4
+### 0.0.4
 - Limited models available to Built-In model provider to realistically usable models.
 - Optimized input limits for built-in models  
 - Added option to use Claude 3.5 model via Amazon Bedrock
 - Fixed issue where Bedrock provider was attempting to initialize before it was seleted. 
 - Improved error messaging.
 
-### 1.0.3
+### 0.0.3
 - Updated docs
 
-### 1.0.2
+### 0.0.2
 - Fixed Windows compatibility issues with Unicode symbols in CLI output
 
 ### 0.0.1
