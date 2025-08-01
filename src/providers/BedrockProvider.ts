@@ -142,7 +142,7 @@ export class BedrockProvider implements IModelProvider {
       messages: converseMessages,
       inferenceConfig: {
         maxTokens: params?.maxTokens ?? maxOutputTokens,
-        temperature: params?.temperature ?? 0.7,
+        temperature: params?.modelOptions.temperature ?? 0.7,
         topP: params?.topP ?? 0.9,
         stopSequences: params?.stopSequences
       }
@@ -152,9 +152,6 @@ export class BedrockProvider implements IModelProvider {
       if (!this.client) {
         throw new BedrockProviderError('Bedrock client not initialized', 'CLIENT_NOT_INITIALIZED');
       }
-
-      // Save debug info before making the request
-      await savePromptDebug(messages, this);
 
       const response = await this.rateLimiter.add(() => this.client!.send(command));
 

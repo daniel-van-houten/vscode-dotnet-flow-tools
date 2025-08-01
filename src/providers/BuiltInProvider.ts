@@ -88,9 +88,6 @@ export class BuiltInProvider implements IModelProvider {
     }
 
     try {
-      // Save debug info before making the request
-      await savePromptDebug(messages, this);
-      
       const response = await this.model.sendRequest(messages, options, cancellationToken);
       
       // Collect response text for debug logging
