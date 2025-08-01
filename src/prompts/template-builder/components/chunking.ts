@@ -19,6 +19,9 @@ export const chunkingComponents: Partial<ComponentRegistry> = {
         - Focus on the specific functionality in this chunk  
         - Maintain consistency with the overall process flow  
 
+        ### Key Points to Consider
+        - The complete code Call Graph is included for each chunk to help you understand the given methods and how they fit into the whole. 
+
         ### Output Format
         Provide a focused analysis of this chunk's business logic that will be integrated with other chunks.
       `
@@ -41,50 +44,6 @@ export const chunkingComponents: Partial<ComponentRegistry> = {
         ### Final Document Structure
         Follow the standard documentation format (Overview, Process Flow, Business Rules, etc.).
       `
-  },
-
-  /** Chunk position indicator */
-  chunkPosition: {
-    content: ({ chunkIndex, totalChunks }) => `${chunkIndex} of ${totalChunks}`
-  },
-
-  /** First chunk specific instructions */
-  firstChunkInstructions: {
-    content: ({ className, methodName }) => stripIndent`
-      **Important Guidelines:**
-      - Start with the document title: "${className}.${methodName} Process"
-      - Create the Overview section based on what you can determine from this first chunk
-      - Begin the Process Flow Overview with a Mermaid diagram if you can identify major phases and high-level conditional logic
-      - Start documenting the Detailed Phases you can identify
-      - Focus on extracting business rules and processes from this chunk
-      - This is NOT the complete code - more chunks will follow to extend this document
-    `
-  },
-
-  /** Middle chunk instructions */
-  middleChunkInstructions: {
-    content: stripIndent`
-      **Instructions:**
-      - Continue building upon the existing document structure
-      - Add new phases, business rules, and processes found in this chunk
-      - Update the Process Flow Overview if new major phases are discovered
-      - Maintain consistency with the terminology and style established in previous sections
-      - Do NOT duplicate content already documented
-      - Focus on NEW business logic and rules in this chunk
-    `
-  },
-
-  /** Final chunk instructions */
-  finalChunkInstructions: {
-    content: stripIndent`
-      **Instructions:**
-      - Analyze this final chunk and integrate any new business processes or rules
-      - Complete any incomplete sections from the current document
-      - Ensure the document has all required sections: Overview, Process Flow Overview, Detailed Phases, and Business Rule Reference
-      - Polish the document to ensure it meets all quality checklist requirements
-      - Make sure the final document is complete, cohesive, and ready for business stakeholders
-      - Ensure proper business language throughout (no technical jargon)
-    `
   },
 
   /** Previous document context wrapper */

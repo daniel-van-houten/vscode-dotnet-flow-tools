@@ -174,6 +174,9 @@ The extension generates markdown documentation that includes:
 
 ## 🔄 Release Notes
 
+### 0.0.5
+- Improved prompt templates resulting in better documentation. 
+
 ### 0.0.4
 - Limited models available to Built-In model provider to realistically usable models.
 - Optimized input limits for built-in models  
