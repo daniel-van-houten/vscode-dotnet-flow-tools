@@ -9,10 +9,8 @@ export const singleShotTemplate: PromptTemplate = {
 
 {{businessContext}}
 
-{{singleShotNote}}
-
 {{codeTrace}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'singleShotNote', 'codeTrace']
+  requiredComponents: ['baseInstructions', 'businessContext', 'codeTrace']
 };
 
 /**

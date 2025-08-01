@@ -11,6 +11,7 @@ import { ProviderRegistry } from '../providers/ProviderRegistry';
 import { processDocumentationWithChunking, analyzeTrace } from '../prompts';
 import { ResourceNotFoundError, ValidationError } from '../core/ErrorTypes';
 import { FILE_PATTERNS } from '../config/ConfigConstants';
+import { resetPromptSequence } from '../core/DebugLogger';
 
 /**
  * Command to generate comprehensive business documentation from C# methods
@@ -25,6 +26,9 @@ export class DocumentThisCommand extends BaseCommand {
 
   protected async executeInternal(): Promise<void> {
     await this.withProgress('', async (progress, token) => {
+      // Reset prompt sequence for new documentation session
+      resetPromptSequence();
+      
       const context = await this.setupExecutionContext(progress, token);
       
       const trace = await this.generateCodeTrace(

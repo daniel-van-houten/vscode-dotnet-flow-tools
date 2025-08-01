@@ -243,7 +243,7 @@ Some other content here
 
         test('should handle business context with other components', () => {
             const testTemplate = `{{businessContext}}
-{{singleShotNote}}
+
 More content`;
 
             const context: PromptBuildContext = {
@@ -284,14 +284,6 @@ More content`;
                 const result = component.content(context);
                 assert.ok(result.includes('Test business context'));
             }
-        });
-
-        test('should handle component with string content', () => {
-            // Test with a component that has string content (like singleShotNote)
-            const result = getComponentContent('singleShotNote', {});
-            
-            assert.strictEqual(typeof result, 'string');
-            assert.ok(result.includes('Note: You are receiving the complete code trace'));
         });
     });
 

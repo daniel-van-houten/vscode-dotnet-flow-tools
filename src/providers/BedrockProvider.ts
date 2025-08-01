@@ -3,6 +3,7 @@ import { IModelProvider, ModelInfo, ModelInvokeParams, ModelResponse } from './I
 import { RateLimiter } from './RateLimiter';
 import { BedrockTokenManager } from './BedrockTokenManager';
 import { BedrockProviderError } from '../core/ErrorTypes';
+import { savePromptDebug } from '../core/DebugLogger';
 
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { fromIni } from '@aws-sdk/credential-providers';
@@ -152,13 +153,19 @@ export class BedrockProvider implements IModelProvider {
         throw new BedrockProviderError('Bedrock client not initialized', 'CLIENT_NOT_INITIALIZED');
       }
 
+      // Save debug info before making the request
+      await savePromptDebug(messages, this);
+
       const response = await this.rateLimiter.add(() => this.client!.send(command));
 
       const text = response.output?.message?.content?.[0]?.text || '';
 
       // Convert to async iterable to match VS Code's format
+      const provider = this;
       const textIterable = async function* () {
         yield text;
+        // Save debug info with response after completion
+        await savePromptDebug(messages, provider, text);
       };
 
       return {

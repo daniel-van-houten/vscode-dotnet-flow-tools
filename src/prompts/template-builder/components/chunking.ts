@@ -80,7 +80,7 @@ export const chunkingComponents: Partial<ComponentRegistry> = {
       **Instructions:**
       - Analyze this final chunk and integrate any new business processes or rules
       - Complete any incomplete sections from the current document
-      - Ensure the document has all required sections: Overview, Process Flow Overview, Detailed Phases, Business Rule Reference, and Common Scenarios
+      - Ensure the document has all required sections: Overview, Process Flow Overview, Detailed Phases, and Business Rule Reference
       - Polish the document to ensure it meets all quality checklist requirements
       - Make sure the final document is complete, cohesive, and ready for business stakeholders
       - Ensure proper business language throughout (no technical jargon)
@@ -100,11 +100,6 @@ export const chunkingComponents: Partial<ComponentRegistry> = {
         \`\`\`
       `;
     }
-  },
-
-  /** Single-shot specific note */
-  singleShotNote: {
-    content: 'Note: You are receiving the complete code trace in a single request. Create a comprehensive business process document following all the structure requirements above.'
   },
 
   /** Combined chunk analyses */

@@ -2,7 +2,7 @@
 *.visx
 CLAUDE.md
 .clinerules
-
+.claude/
 # .NET
 bin/
 obj/

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { IModelProvider, ModelInfo, ModelInvokeParams, ModelResponse } from './IModelProvider';
 import { BuiltInTokenManager } from './BuiltInTokenManager';
 import { BuiltInProviderError } from '../core/ErrorTypes';
+import { savePromptDebug } from '../core/DebugLogger';
 
 export class BuiltInProvider implements IModelProvider {
   readonly id = 'built-in';
@@ -87,10 +88,26 @@ export class BuiltInProvider implements IModelProvider {
     }
 
     try {
+      // Save debug info before making the request
+      await savePromptDebug(messages, this);
+      
       const response = await this.model.sendRequest(messages, options, cancellationToken);
       
+      // Collect response text for debug logging
+      let responseText = '';
+      const originalText = response.text;
+      const provider = this;
+      const debugText = async function* () {
+        for await (const fragment of originalText) {
+          responseText += fragment;
+          yield fragment;
+        }
+        // Save debug info with response after completion
+        await savePromptDebug(messages, provider, responseText);
+      };
+      
       return {
-        text: response.text,
+        text: debugText(),
         // VS Code doesn't provide token count in response
         totalTokens: undefined
       };
