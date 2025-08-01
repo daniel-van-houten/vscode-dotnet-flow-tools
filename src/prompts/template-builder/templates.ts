@@ -18,10 +18,16 @@ export const singleShotTemplate: PromptTemplate = {
  */
 export const chunkAnalysisTemplate: PromptTemplate = {
   name: 'chunk-analysis',
-  template: `{{chunkAnalysisInstructions}}
+  template: `{{baseInstructions}}
+
+{{businessContext}}
+
+{{chunkAnalysisInstructions}}
+
+{{previousDocumentContext}}
 
 {{codeTrace}}`,
-  requiredComponents: ['chunkAnalysisInstructions', 'codeTrace']
+  requiredComponents: ['baseInstructions', 'businessContext', 'chunkAnalysisInstructions', 'codeTrace']
 };
 
 /**

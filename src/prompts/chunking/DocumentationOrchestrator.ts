@@ -5,7 +5,7 @@ import { chunkingDecisionEngine } from './ChunkingDecisionEngine';
 import { parseTrace, validateTraceStructure as validateTrace } from './parser';
 import { chunkTrace } from './chunker';
 import { TraceValidationError, TokenLimitExceededError } from './errors';
-import { templateProcessor, PromptBuildContext } from '../template-builder';
+import { templateProcessor, PromptBuildContext, ProgressiveDocumentationContext, DocumentationSummary } from '../template-builder';
 
 // Processing configuration constants
 const PROCESSING_CONFIG = {
@@ -84,9 +84,17 @@ export class DocumentationOrchestrator {
   }
 
   private async processChunks(chunks: any[], context: ProcessingContext, provider: IModelProvider): Promise<string[]> {
-    context.progressCallback?.(`Analyzing ${chunks.length} chunks for information extraction`);
+    context.progressCallback?.(`Analyzing ${chunks.length} chunks with progressive documentation building`);
 
     const chunkAnalyses: string[] = [];
+    let progressiveContext: ProgressiveDocumentationContext = {
+      documentedMethods: new Set(),
+      referencedButNotAnalyzed: new Set(),
+      identifiedPatterns: [],
+      pendingQuestions: [],
+      integrationHints: new Map()
+    };
+    let cumulativeDocumentation = '';
 
     for (let i = 0; i < chunks.length; i++) {
       if (context.cancellationToken?.isCancellationRequested) {
@@ -94,23 +102,115 @@ export class DocumentationOrchestrator {
       }
 
       const chunkIndex = i + 1;
+      const isFirstChunk = chunkIndex === 1;
+      const isLastChunk = chunkIndex === chunks.length;
+      
+      // Determine chunk position for position-aware prompting
+      const chunkPosition: 'first' | 'middle' | 'last' = 
+        isFirstChunk ? 'first' : isLastChunk ? 'last' : 'middle';
+
       const promptContext: PromptBuildContext = {
         codeTrace: chunks[i].content,
         className: context.className,
         methodName: context.methodName,
         chunkIndex,
         totalChunks: chunks.length,
-        businessContext: context.businessContext
+        businessContext: context.businessContext,
+        chunkPosition,
+        progressiveContext,
+        previousDocument: cumulativeDocumentation
       };
 
       const prompt = templateProcessor.buildPrompt('chunk-analysis', promptContext);
       const analysis = await this.invokeProvider(prompt, provider, context.cancellationToken, PROCESSING_CONFIG.CHUNK_ANALYSIS_TEMPERATURE);
+      
+      // Store the analysis
       chunkAnalyses.push(`## Chunk ${chunkIndex} Analysis\n\n${analysis.trim()}`);
+      
+      // Update progressive context for next iteration
+      progressiveContext = await this.updateProgressiveContext(progressiveContext, analysis, chunks[i], provider);
+      
+      // Update cumulative documentation
+      if (isFirstChunk) {
+        cumulativeDocumentation = analysis.trim();
+      } else {
+        // For middle and last chunks, we maintain a structured summary rather than full text
+        // to manage token usage efficiently
+        cumulativeDocumentation = await this.buildStructuredSummary(progressiveContext, provider);
+      }
 
-      context.progressCallback?.(`Processing chunk ${chunkIndex} of ${chunks.length}`);
+      context.progressCallback?.(`Processed chunk ${chunkIndex} of ${chunks.length}`);
     }
 
     return chunkAnalyses;
+  }
+
+  /**
+   * Updates progressive context based on the latest chunk analysis
+   */
+  private async updateProgressiveContext(
+    currentContext: ProgressiveDocumentationContext, 
+    analysis: string, 
+    chunk: any, 
+    provider: IModelProvider
+  ): Promise<ProgressiveDocumentationContext> {
+    // Extract method names from the chunk
+    const methodPattern = /(?:class|interface|struct)\s+\w+.*?(?:public|private|protected|internal)?\s*(?:static\s+)?(?:async\s+)?(?:\w+\s+)*(\w+)\s*\(/g;
+    const chunkMethods = new Set<string>();
+    let match;
+    
+    while ((match = methodPattern.exec(chunk.content)) !== null) {
+      chunkMethods.add(match[1]);
+    }
+
+    // Simple pattern detection - look for common business patterns in the analysis
+    const newPatterns: string[] = [];
+    if (analysis.toLowerCase().includes('validation')) {
+      newPatterns.push('Data validation pattern detected');
+    }
+    if (analysis.toLowerCase().includes('transformation')) {
+      newPatterns.push('Data transformation pattern detected');
+    }
+    if (analysis.toLowerCase().includes('command') || analysis.toLowerCase().includes('handler')) {
+      newPatterns.push('Command/Handler pattern detected');
+    }
+
+    // Extract business rules from analysis (simple heuristic)
+    const businessRules: string[] = [];
+    const ruleMatches = analysis.match(/(?:rule|must|should|requirement|constraint):\s*([^.!?]+)/gi);
+    if (ruleMatches) {
+      businessRules.push(...ruleMatches.map(rule => rule.trim()));
+    }
+
+    return {
+      ...currentContext,
+      documentedMethods: new Set([...currentContext.documentedMethods || [], ...chunkMethods]),
+      identifiedPatterns: [...currentContext.identifiedPatterns || [], ...newPatterns],
+      documentationSummary: {
+        ...currentContext.documentationSummary,
+        businessRules: [...currentContext.documentationSummary?.businessRules || [], ...businessRules]
+      }
+    };
+  }
+
+  /**
+   * Builds a structured summary for token-efficient context passing
+   */
+  private async buildStructuredSummary(
+    progressiveContext: ProgressiveDocumentationContext, 
+    provider: IModelProvider
+  ): Promise<string> {
+    const summary = progressiveContext.documentationSummary;
+    if (!summary) {
+      return 'No summary available yet';
+    }
+
+    return `
+**Main Purpose:** ${summary.mainPurpose || 'To be determined in later chunks'}
+**Methods Analyzed:** ${progressiveContext.documentedMethods?.size || 0}
+**Business Rules:** ${summary.businessRules?.length || 0} identified
+**Patterns Found:** ${progressiveContext.identifiedPatterns?.join(', ') || 'None yet'}
+`.trim();
   }
 
   private async consolidateAnalyses(chunkAnalyses: string[], chunkCount: number, context: ProcessingContext, provider: IModelProvider): Promise<string> {

@@ -89,7 +89,9 @@ Use `flowchart TD` to describe a process. Your generated flowcharts should follo
 - **Separate Global Flow:** Define the high-level connections between subgraphs and terminal nodes last to clarify the overall process.
 
 **A Flowchart Example:**
-The following is a moderately detailed flow chart for demonstration. Use your judjement when determining the level of complexity for any diagrate you generate based on the code examples given. 
+- The following is a moderately detailed flow chart for demonstration. Use your judjement when determining the level of complexity for any diagrate you generate based on the code examples given. 
+- If the code you're provided warrants a simpler graph, create a simpler graph. 
+- If you're given a lot of code with a lot of complexity, your graph should reflect that and you should create a more complex, nuanced graph. 
 ```mermaid
 flowchart TD
 %% Order Validation Subgraph
