@@ -47,8 +47,6 @@ export class BedrockProvider implements IModelProvider {
       this.initialized = true;
       console.log('Bedrock provider initialized without model selection - AWS client will be created when model is selected');
       
-      // Show user-friendly guidance for model selection
-      this.showModelSelectionGuidance();
       return;
     }
 
@@ -76,7 +74,6 @@ export class BedrockProvider implements IModelProvider {
       
       // Handle credential-specific errors more gracefully
       if (error instanceof Error && error.message.includes('Could not resolve credentials')) {
-        this.showCredentialConfigurationGuidance();
         throw BedrockProviderError.credentialsNotConfigured();
       }
       
@@ -98,7 +95,6 @@ export class BedrockProvider implements IModelProvider {
     }
 
     if (!this.modelId || this.modelId.trim() === '') {
-      this.showModelNotSelectedGuidance();
       throw BedrockProviderError.modelNotSelected();
     }
 
@@ -207,53 +203,8 @@ export class BedrockProvider implements IModelProvider {
     return this.initialized && this.client !== null;
   }
 
-  /**
-   * Shows user-friendly guidance for selecting a Bedrock model
-   */
-  private showModelSelectionGuidance(): void {
-    vscode.window.showInformationMessage(
-      'Bedrock provider is ready. Use the "Select AI Model" command to choose a model before generating documentation.',
-      'Select AI Model'
-    ).then(selection => {
-      if (selection === 'Select AI Model') {
-        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
-      }
-    });
-  }
 
-  /**
-   * Shows user-friendly guidance for credential configuration issues
-   */
-  private showCredentialConfigurationGuidance(): void {
-    vscode.window.showWarningMessage(
-      'AWS credentials not configured for Bedrock. Configure credentials or select a different provider.',
-      'Select Different Provider',
-      'Configure AWS'
-    ).then(selection => {
-      if (selection === 'Select Different Provider') {
-        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
-      } else if (selection === 'Configure AWS') {
-        vscode.env.openExternal(vscode.Uri.parse('https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html'));
-      }
-    });
-  }
 
-  /**
-   * Shows user-friendly guidance when no model is selected during usage
-   */
-  private showModelNotSelectedGuidance(): void {
-    vscode.window.showInformationMessage(
-      'No AI model selected. Please select a Bedrock model to use this provider.',
-      'Select AI Model',
-      'Use Built-in Provider'
-    ).then(selection => {
-      if (selection === 'Select AI Model') {
-        vscode.commands.executeCommand('dotnet-flow-tools.selectModel');
-      } else if (selection === 'Use Built-in Provider') {
-        vscode.workspace.getConfiguration('dotnetFlow').update('provider', 'built-in', vscode.ConfigurationTarget.Global);
-      }
-    });
-  }
 
   /**
    * Shows user-friendly guidance when this provider fails and system falls back to built-in
