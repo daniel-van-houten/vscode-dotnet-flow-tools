@@ -92,15 +92,16 @@ Use `flowchart TD` to describe a process. Your generated flowcharts should follo
 - The following is a moderately detailed flow chart for demonstration. Use your judjement when determining the level of complexity for any diagrate you generate based on the code examples given. 
 - If the code you're provided warrants a simpler graph, create a simpler graph. 
 - If you're given a lot of code with a lot of complexity, your graph should reflect that and you should create a more complex, nuanced graph. 
+
 ```mermaid
 flowchart TD
 %% Order Validation Subgraph
 subgraph "Validate the Order"
 direction TB
-ReceiveOrder([Receive Customer Order])
-FraudCheck[[Run Fraud Detection]]
-IsValid{Is the Order Valid?}
-InvalidNotice[/Send Invalid Order Notice/]
+ReceiveOrder(["Receive Customer Order"])
+FraudCheck[["Run Fraud Detection"]]
+IsValid{"Is the Order Valid?"}
+InvalidNotice[/"Send Invalid Order Notice"/]
 
 ReceiveOrder --> FraudCheck
 FraudCheck --> IsValid
@@ -110,11 +111,11 @@ end
 %% Inventory Handling Subgraph
 subgraph "Check Inventory"
 direction TB
-CheckInventory[[Query Inventory System]]
-InStock{Items In Stock?}
+CheckInventory[["Query Inventory System"]]
+InStock{"Items In Stock?"}
 ReserveItems[["Reserve Items in Stock"]]
-ContactSupplier{{Contact Supplier for Restock}}
-BackorderNotice[/Send Back-Order Notice/]
+ContactSupplier{{"Contact Supplier for Restock"}}
+BackorderNotice[/"Send Back-Order Notice"/]
 
 CheckInventory --> InStock
 InStock -- Yes --> ReserveItems
@@ -125,10 +126,10 @@ end
 %% Billing Subgraph
 subgraph "Process Payment"
 direction TB
-AttemptPayment[[Attempt Customer Payment]]
-PaymentGateway{{Connect to Payment Gateway}}
-PaymentSuccess{Payment Successful?}
-PaymentFailed[/Send Payment Failed Notice/]
+AttemptPayment[["Attempt Customer Payment"]]
+PaymentGateway{{"Connect to Payment Gateway"}}
+PaymentSuccess{"Payment Successful?"}
+PaymentFailed[/"Send Payment Failed Notice"/]
 GenerateReceipt[["Generate Customer Receipt"]]
 
 AttemptPayment --> PaymentGateway
@@ -141,10 +142,10 @@ end
 subgraph "Fulfill the Order"
 direction TB
 PickItems(["Pick Items from Warehouse"])
-PackOrder>Pack the Order]
-PrintLabel[/"Print Shipping Label"\\]
-ShipOrder{{Ship via Carrier}}
-SendConfirmation[/Send Tracking Confirmation/]
+PackOrder[>"Pack the Order"<]
+PrintLabel[/"Print Shipping Label"/]
+ShipOrder{{"Ship via Carrier"}}
+SendConfirmation[/"Send Tracking Confirmation"/]
 
 PickItems --> PackOrder
 PackOrder --> PrintLabel
@@ -153,7 +154,7 @@ ShipOrder --> SendConfirmation
 end
 
 %% Overall Process Flow
-Start((Order Process Starts)) --> ReceiveOrder
+Start(("Order Process Starts")) --> ReceiveOrder
 
 IsValid -- Yes --> CheckInventory
 
@@ -165,13 +166,17 @@ InvalidNotice --> OrderCancelled{{"Order Cancelled"}}
 BackorderNotice --> OrderCancelled
 PaymentFailed --> OrderCancelled
 
-SendConfirmation --> OrderComplete((Order Complete))
+SendConfirmation --> OrderComplete(("Order Complete"))
 OrderComplete --> ArchiveOrder[["Archive Order Record"]]
 
-OrderCancelled --> End((End))
-ArchiveOrder --> End((End))
+OrderCancelled --> End(("End"))
+ArchiveOrder --> End(("End"))
 
 ```
+
+**Important Mermaid Diagram Note**
+- All text in the diagram needs to be inside double-quotes so that special characters in the text, such as parenthesis, to not prevent the diagram from rendering. 
+- The diagram portion should be as simple as possible while still showing the major parts of the process. 
 
 **Symbol Requirements**
 - The start should be defined like this: start([<Step Name Here>])

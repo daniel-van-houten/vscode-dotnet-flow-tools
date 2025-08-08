@@ -32,6 +32,9 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('Failed to initialize AI provider system.');
       });
     
+    // Log all built-in model details
+    await logBuiltInModelDetails(providerRegistry, logger);
+    
     // Setup configuration change watcher
     setupConfigurationWatcher(context, providerRegistry, logger);
     
@@ -73,6 +76,43 @@ function setupConfigurationWatcher(
 }
 
 
+
+/**
+ * Log all built-in model details for debugging and visibility
+ */
+async function logBuiltInModelDetails(
+  providerRegistry: ProviderRegistry,
+  logger: ILogger
+): Promise<void> {
+  try {
+    // Query VS Code LM API directly for available models
+    const availableModels = await vscode.lm.selectChatModels();
+    
+    if (availableModels.length === 0) {
+      logger.info('No language models available from VS Code LM API');
+      return;
+    }
+
+    logger.info(`Available VS Code language models (${availableModels.length}):`);
+    
+    availableModels.forEach(model => {
+      const vendor = model.vendor || 'Unknown';
+      const family = model.family || 'Unknown';
+      const version = model.version || 'Unknown';
+      const name = model.name || model.id;
+      
+      logger.info(`  - ID: ${model.id}`);
+      logger.info(`    Name: ${name}`);
+      logger.info(`    Vendor: ${vendor}`);
+      logger.info(`    Family: ${family}`);
+      logger.info(`    Version: ${version}`);
+      logger.info(`    Max Input Tokens: ${model.maxInputTokens || 'Unknown'}`);
+      logger.info('    ---');
+    });
+  } catch (error) {
+    logger.error('Failed to log VS Code language model details', error instanceof Error ? error : new Error(String(error)));
+  }
+}
 
 /**
  * Simple migration for deprecated settings

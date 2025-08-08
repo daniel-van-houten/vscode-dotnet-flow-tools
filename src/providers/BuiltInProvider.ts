@@ -12,6 +12,7 @@ export class BuiltInProvider implements IModelProvider {
 
   // Static list of commonly available VS Code language models
   private static readonly MODELS: ModelInfo[] = [
+    { id: 'gpt-5', name: 'GPT-5 (Preview)', description: 'OpenAI - GPT-5' },
     { id: 'gpt-4o', name: 'GPT-4o', description: 'OpenAI - GPT-4o' },
     { id: 'gpt-4.1', name: 'GPT-4.1', description: 'OpenAI - GPT-4.1' },
     { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic - Claude 3.5 Sonnet' },
