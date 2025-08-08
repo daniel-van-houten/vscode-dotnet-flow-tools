@@ -31,6 +31,19 @@ export abstract class BaseCommand implements ICommand {
   protected async handleError(error: unknown): Promise<void> {
     this.logger.error('Command execution failed', error instanceof Error ? error : new Error(String(error)));
 
+    // Friendly guidance for GitHub Copilot "model_not_supported"
+    const errMsg = error instanceof Error ? error.message : String(error);
+    if (typeof errMsg === 'string' && errMsg.includes('model_not_supported')) {
+      const action = await vscode.window.showErrorMessage(
+        'Model not supported: The requested model isn’t enabled. Enable it in GitHub Copilot, then try again.',
+        'Open Copilot settings'
+      );
+      if (action === 'Open Copilot settings') {
+        vscode.env.openExternal(vscode.Uri.parse('https://github.com/settings/copilot/features'));
+      }
+      return;
+    }
+
     let message: string;
     let showSettings = false;
 
