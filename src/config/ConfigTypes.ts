@@ -6,16 +6,12 @@ export interface DotnetFlowConfig {
    * Path to the CLI executable
    */
   cliBuild: string;
-  
+
   /**
-   * AI provider to use
+   * Combined provider and model in the format "providerId|modelId"
+   * Example: "bedrock|us.anthropic.claude-3-5-sonnet-20240620-v1:0"
    */
-  provider: 'built-in' | 'bedrock';
-  
-  /**
-   * AI model ID
-   */
-  modelId: string;
+  model?: string;
   
   /**
    * AWS profile for Bedrock provider
@@ -38,8 +34,7 @@ export interface DotnetFlowConfig {
  */
 export const DEFAULT_CONFIG: DotnetFlowConfig = {
   cliBuild: '${extensionPath}/cli/dotnet-flow',
-  provider: 'built-in',
-  modelId: '',
+  model: undefined,
   awsProfile: 'default',
   awsRegion: 'us-east-1',
   businessContext: ''

@@ -3,6 +3,7 @@ import { setupServices } from './core/ServiceSetup';
 import { ServiceContainer, ServiceKeys } from './core/ServiceContainer';
 import { CommandRegistry } from './commands/CommandRegistry';
 import { initializeProviderSystem, ProviderRegistry } from './providers';
+import { isConfigWatcherSuspended } from './core/ConfigWatcherGate';
 import { ILogger } from './core/Logger';
 import { ContentLoader } from './prompts/template-builder/content-loader';
 
@@ -58,10 +59,15 @@ function setupConfigurationWatcher(
   logger: ILogger
 ): void {
   const configWatcher = vscode.workspace.onDidChangeConfiguration(async (event) => {
-    if (event.affectsConfiguration('dotnetFlow.provider') || 
-        event.affectsConfiguration('dotnetFlow.modelId') ||
-        event.affectsConfiguration('dotnetFlow.awsProfile') ||
-        event.affectsConfiguration('dotnetFlow.awsRegion')) {
+    if (
+      event.affectsConfiguration('dotnetFlow.model') ||
+      event.affectsConfiguration('dotnetFlow.awsProfile') ||
+      event.affectsConfiguration('dotnetFlow.awsRegion')
+    ) {
+      if (isConfigWatcherSuspended()) {
+        logger.info('Config watcher suspended; skipping reinitialization');
+        return;
+      }
       try {
         await initializeProviderSystem(providerRegistry, vscode.workspace.getConfiguration('dotnetFlow'), context);
         logger.info('Provider system reinitialized due to configuration change');
@@ -122,15 +128,25 @@ async function migrateDeprecatedSettings(): Promise<void> {
   
   const preferredVendor = config.get<string>('preferredVendor');
   const preferredModelId = config.get<string>('preferredModelId');
+  const provider = config.get<string>('provider');
+  const modelId = config.get<string>('modelId');
+  const combined = config.get<string>('model');
   
-  if (preferredVendor && !config.get<string>('provider')) {
-    await config.update('provider', 'built-in', vscode.ConfigurationTarget.Global);
+  // Maintain deprecated migrations for older users, but target combined key
+  if (preferredVendor && !provider && !combined) {
+    await config.update('model', `built-in|${preferredModelId ?? ''}`, vscode.ConfigurationTarget.Global);
     await config.update('preferredVendor', undefined, vscode.ConfigurationTarget.Global);
   }
-  
-  if (preferredModelId && !config.get<string>('modelId')) {
-    await config.update('modelId', preferredModelId, vscode.ConfigurationTarget.Global);
+  if (preferredModelId && !modelId && !combined) {
+    await config.update('model', `${provider ?? 'built-in'}|${preferredModelId}`, vscode.ConfigurationTarget.Global);
     await config.update('preferredModelId', undefined, vscode.ConfigurationTarget.Global);
+  }
+
+  // New migration: keep combined and legacy keys in sync
+  // If combined is missing but legacy keys exist, create combined
+  if (!combined && (provider || modelId)) {
+    const combinedValue = `${provider ?? ''}|${modelId ?? ''}`;
+    await config.update('model', combinedValue, vscode.ConfigurationTarget.Global);
   }
 }
 

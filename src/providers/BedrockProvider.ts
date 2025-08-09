@@ -4,6 +4,7 @@ import { RateLimiter } from './RateLimiter';
 import { BedrockTokenManager } from './BedrockTokenManager';
 import { BedrockProviderError } from '../core/ErrorTypes';
 import { savePromptDebug } from '../core/DebugLogger';
+import { getCatalogModelsForProvider } from './model-catalog';
 
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { fromIni } from '@aws-sdk/credential-providers';
@@ -17,11 +18,10 @@ export class BedrockProvider implements IModelProvider {
   private rateLimiter: RateLimiter;
   readonly tokenManager = new BedrockTokenManager();
 
-  // Hardcoded list of Bedrock models as per spec
-  private static readonly MODELS: ModelInfo[] = [
-    { id: 'us.anthropic.claude-sonnet-4-20250514-v1:0', name: 'Claude Sonnet 4', description: 'Anthropic - Claude Sonnet 4' },
-    { id: 'us.anthropic.claude-3-5-sonnet-20240620-v1:0', name: 'Claude Sonnet 3.5', description: 'Anthropic - Claude Sonnet 3.5' },
-  ];
+  // Models sourced from centralized catalog
+  private static get MODELS(): ModelInfo[] {
+    return getCatalogModelsForProvider('bedrock');
+  }
 
   constructor() {
     this.rateLimiter = RateLimiter.getInstance(1); // Conservative rate limiting for Bedrock
@@ -82,7 +82,7 @@ export class BedrockProvider implements IModelProvider {
   }
 
   async listModels(): Promise<ModelInfo[]> {
-    // Return the static list of models
+    // Return the catalog models
     return BedrockProvider.MODELS;
   }
 

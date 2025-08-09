@@ -8,8 +8,8 @@ export const CONFIG_SECTION = 'dotnetFlow' as const;
  */
 export const CONFIG_KEYS = {
   CLI_BUILD: 'dotnetFlow.cliBuild',
-  PROVIDER: 'dotnetFlow.provider',
-  MODEL_ID: 'dotnetFlow.modelId',
+  // Combined provider|model identifier for simplified configuration
+  MODEL: 'dotnetFlow.model',
   AWS_PROFILE: 'dotnetFlow.awsProfile',
   AWS_REGION: 'dotnetFlow.awsRegion',
   BUSINESS_CONTEXT: 'dotnetFlow.businessContext'

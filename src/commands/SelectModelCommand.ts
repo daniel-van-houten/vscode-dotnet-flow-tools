@@ -5,6 +5,7 @@ import { ServiceContainer, ServiceKeys } from '../core/ServiceContainer';
 import { IConfigService } from '../services/IConfigService';
 import { ProviderRegistry } from '../providers/ProviderRegistry';
 import { initializeProviderSystem } from '../providers';
+import { suspendConfigWatcher } from '../core/ConfigWatcherGate';
 
 /**
  * Command to select AI model for documentation generation
@@ -23,8 +24,15 @@ export class SelectModelCommand extends BaseCommand {
     const extensionContext = this.serviceContainer.get<vscode.ExtensionContext>('extensionContext');
     
     const config = configService.getConfig();
-    const currentProvider = config.provider;
-    const currentModelId = config.modelId;
+    let currentProvider = '';
+    let currentModelId = '';
+    if (config.model) {
+      const idx = config.model.indexOf('|');
+      if (idx > 0) {
+        currentProvider = config.model.slice(0, idx);
+        currentModelId = config.model.slice(idx + 1);
+      }
+    }
     
     // Get all available providers
     const allProviderIds = providerRegistry.getProviderIds();
@@ -134,8 +142,15 @@ export class SelectModelCommand extends BaseCommand {
       return;
     }
 
-    await configService.update('provider', picked.providerId as 'built-in' | 'bedrock');
-    await configService.update('modelId', picked.id);
+    // Suspend watcher while applying values programmatically
+    const resume = suspendConfigWatcher();
+    try {
+      // Update combined key (single source of truth)
+      // Store a user-friendly combined value with spaces and model name
+      await configService.update('model', `${picked.providerId} | ${picked.modelName}` as any);
+    } finally {
+      resume();
+    }
     
     // Reinitialize provider with new model
     const workspaceConfig = vscode.workspace.getConfiguration('dotnetFlow');

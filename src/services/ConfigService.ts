@@ -14,8 +14,7 @@ export class ConfigService implements IConfigService {
     
     return {
       cliBuild: config.get('cliBuild', DEFAULT_CONFIG.cliBuild),
-      provider: config.get('provider', DEFAULT_CONFIG.provider),
-      modelId: config.get('modelId', DEFAULT_CONFIG.modelId),
+      model: config.get('model', DEFAULT_CONFIG.model),
       awsProfile: config.get('awsProfile', DEFAULT_CONFIG.awsProfile),
       awsRegion: config.get('awsRegion', DEFAULT_CONFIG.awsRegion),
       businessContext: config.get('businessContext', DEFAULT_CONFIG.businessContext)
