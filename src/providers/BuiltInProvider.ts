@@ -3,6 +3,7 @@ import { IModelProvider, ModelInfo, ModelInvokeParams, ModelResponse } from './I
 import { BuiltInTokenManager } from './BuiltInTokenManager';
 import { BuiltInProviderError } from '../core/ErrorTypes';
 import { savePromptDebug } from '../core/DebugLogger';
+import { getCatalogModelsForProvider } from './model-catalog';
 
 export class BuiltInProvider implements IModelProvider {
   readonly id = 'built-in';
@@ -10,13 +11,10 @@ export class BuiltInProvider implements IModelProvider {
   private initialized = false;
   readonly tokenManager = new BuiltInTokenManager();
 
-  // Static list of commonly available VS Code language models
-  private static readonly MODELS: ModelInfo[] = [
-    { id: 'gpt-5', name: 'GPT-5 (Preview)', description: 'OpenAI - GPT-5' },
-    { id: 'gpt-4o', name: 'GPT-4o', description: 'OpenAI - GPT-4o' },
-    { id: 'gpt-4.1', name: 'GPT-4.1', description: 'OpenAI - GPT-4.1' },
-    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic - Claude 3.5 Sonnet' },
-  ];
+  // Models sourced from centralized catalog
+  private static get MODELS(): ModelInfo[] {
+    return getCatalogModelsForProvider('built-in');
+  }
 
   get currentModelId(): string {
     return this.model?.id || '';
@@ -62,7 +60,7 @@ export class BuiltInProvider implements IModelProvider {
   }
 
   async listModels(): Promise<ModelInfo[]> {
-    // Return the static list of models
+    // Return the catalog models
     return BuiltInProvider.MODELS;
   }
 

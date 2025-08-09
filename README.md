@@ -68,8 +68,7 @@ Install "Dotnet Flow Tools" Extension
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `dotnetFlow.provider` | AI model provider (`built-in` or `bedrock`) | `built-in` |
-| `dotnetFlow.modelId` | Selected AI model ID | _(set via command)_ |
+| `dotnetFlow.model` | Combined provider and model (dropdown) | _(select)_ |
 | `dotnetFlow.businessContext` | Business domain context for better examples | _(empty)_ |
 | `dotnetFlow.awsProfile` | AWS profile for Bedrock provider | `default` |
 | `dotnetFlow.awsRegion` | AWS region for Bedrock provider | `us-east-1` |

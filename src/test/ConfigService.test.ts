@@ -126,7 +126,8 @@ Line 3: Industry-specific context`;
             assert.strictEqual(config.businessContext, testContext);
             // Verify other fields are still present
             assert.strictEqual(config.cliBuild, DEFAULT_CONFIG.cliBuild);
-            assert.strictEqual(config.provider, DEFAULT_CONFIG.provider);
+            // provider removed in favor of combined key
+            assert.ok('model' in config);
         });
 
         test('should maintain type safety for DotnetFlowConfig interface', () => {

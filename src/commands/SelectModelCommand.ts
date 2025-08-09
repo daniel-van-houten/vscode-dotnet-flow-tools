@@ -24,8 +24,15 @@ export class SelectModelCommand extends BaseCommand {
     const extensionContext = this.serviceContainer.get<vscode.ExtensionContext>('extensionContext');
     
     const config = configService.getConfig();
-    const currentProvider = config.provider;
-    const currentModelId = config.modelId;
+    let currentProvider = '';
+    let currentModelId = '';
+    if (config.model) {
+      const idx = config.model.indexOf('|');
+      if (idx > 0) {
+        currentProvider = config.model.slice(0, idx);
+        currentModelId = config.model.slice(idx + 1);
+      }
+    }
     
     // Get all available providers
     const allProviderIds = providerRegistry.getProviderIds();
@@ -135,11 +142,12 @@ export class SelectModelCommand extends BaseCommand {
       return;
     }
 
-    // Suspend watcher while applying both values programmatically
+    // Suspend watcher while applying values programmatically
     const resume = suspendConfigWatcher();
     try {
-      await configService.update('modelId', picked.id);
-      await configService.update('provider', picked.providerId as 'built-in' | 'bedrock');
+      // Update combined key (single source of truth)
+      // Store a user-friendly combined value with spaces and model name
+      await configService.update('model', `${picked.providerId} | ${picked.modelName}` as any);
     } finally {
       resume();
     }
