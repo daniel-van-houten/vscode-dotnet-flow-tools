@@ -1,23 +1,22 @@
-import { PromptTemplate } from './types';
+import { PromptTemplate } from "./types";
 
 /**
  * Template for single-shot documentation generation
  */
 export const singleShotTemplate: PromptTemplate = {
-  name: 'single-shot',
+  name: "single-shot",
   template: `{{baseInstructions}}
 
 {{businessContext}}
 
 {{codeTrace}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'codeTrace']
 };
 
 /**
  * Template for chunk analysis (information extraction)
  */
 export const chunkAnalysisTemplate: PromptTemplate = {
-  name: 'chunk-analysis',
+  name: "chunk-analysis",
   template: `{{baseInstructions}}
 
 {{businessContext}}
@@ -27,14 +26,13 @@ export const chunkAnalysisTemplate: PromptTemplate = {
 {{previousDocumentContext}}
 
 {{codeTrace}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'chunkAnalysisInstructions', 'codeTrace']
 };
 
 /**
  * Template for final document consolidation
  */
 export const consolidationTemplate: PromptTemplate = {
-  name: 'consolidation',
+  name: "consolidation",
   template: `{{baseInstructions}}
 
 {{businessContext}}
@@ -42,16 +40,15 @@ export const consolidationTemplate: PromptTemplate = {
 {{consolidationInstructions}}
 
 {{chunkAnalyses}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'consolidationInstructions', 'chunkAnalyses']
 };
 
 /**
  * Registry of all available templates
  */
 export const promptTemplates = {
-  'single-shot': singleShotTemplate,
-  'chunk-analysis': chunkAnalysisTemplate,
-  'consolidation': consolidationTemplate
+  "single-shot": singleShotTemplate,
+  "chunk-analysis": chunkAnalysisTemplate,
+  consolidation: consolidationTemplate,
 };
 
 /**
@@ -60,4 +57,3 @@ export const promptTemplates = {
 export function getTemplate(templateName: string): PromptTemplate | undefined {
   return promptTemplates[templateName as keyof typeof promptTemplates];
 }
-

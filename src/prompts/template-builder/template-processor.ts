@@ -1,13 +1,8 @@
-import { PromptBuildContext, PromptComponent } from './types';
-import { getTemplate } from './templates';
+import { PromptBuildContext, PromptComponent } from "./types";
+import { getTemplate } from "./templates";
 
-// Direct component imports (no factory pattern)
-import { BaseInstructionsComponent } from './components/base/BaseInstructionsComponent';
-import { DocumentationStyleComponent } from './components/base/DocumentationStyleComponent';
-import { BusinessContextComponent } from './components/business/BusinessContextComponent';
-import { BusinessRuleFrameworkComponent } from './components/business/BusinessRuleFrameworkComponent';
-import { CodeTraceComponent } from './components/formatting/CodeTraceComponent';
-import { chunkingComponents } from './components/chunking';
+// Shared component registry
+import { promptComponents } from "./component-registry";
 
 /**
  * Error thrown when a component cannot be resolved
@@ -22,30 +17,32 @@ export class ComponentResolutionError extends Error {
       availableContext?: string[];
       missingParameters?: string[];
       templateName?: string;
-    }
+    },
   ) {
     super(message);
-    this.name = 'ComponentResolutionError';
+    this.name = "ComponentResolutionError";
   }
 }
 
 /**
  * Result type for template processing
  */
-export type TemplateResult = {
-  success: true;
-  content: string;
-} | {
-  success: false;
-  error: string;
-  context: {
-    missingComponent?: string;
-    availableContext?: string[];
-    templateName?: string;
-    availableComponents?: string[];
-    missingParameters?: string[];
-  };
-};
+export type TemplateResult =
+  | {
+      success: true;
+      content: string;
+    }
+  | {
+      success: false;
+      error: string;
+      context: {
+        missingComponent?: string;
+        availableContext?: string[];
+        templateName?: string;
+        availableComponents?: string[];
+        missingParameters?: string[];
+      };
+    };
 
 /**
  * Modern template builder with single-pass resolution and clear error handling
@@ -56,34 +53,7 @@ export class PromptTemplateBuilder {
 
   constructor(context: PromptBuildContext) {
     this.context = context;
-    this.components = this.buildComponentRegistry();
-  }
-
-  /**
-   * Build the component registry
-   */
-  private buildComponentRegistry(): { [name: string]: PromptComponent } {
-    const registry: { [name: string]: PromptComponent } = {};
-    
-    // Base components
-    registry.baseInstructions = BaseInstructionsComponent;
-    registry.documentationStyle = DocumentationStyleComponent;
-
-    // Business components  
-    registry.businessContext = BusinessContextComponent;
-    registry.businessRuleNarrativeFramework = BusinessRuleFrameworkComponent;
-
-    // Formatting components
-    registry.codeTrace = CodeTraceComponent;
-
-    // Chunking components
-    Object.entries(chunkingComponents).forEach(([name, component]) => {
-      if (component) {
-        registry[name] = component;
-      }
-    });
-    
-    return registry;
+    this.components = promptComponents;
   }
 
   /**
@@ -92,7 +62,9 @@ export class PromptTemplateBuilder {
   build(templateName: string): TemplateResult {
     const template = getTemplate(templateName);
     if (!template) {
-      return this.failure(`Template '${templateName}' not found`, { templateName });
+      return this.failure(`Template '${templateName}' not found`, {
+        templateName,
+      });
     }
 
     try {
@@ -102,7 +74,10 @@ export class PromptTemplateBuilder {
       if (error instanceof ComponentResolutionError) {
         return this.failure(error.message, { templateName, ...error.context });
       }
-      return this.failure(`Template processing failed: ${error instanceof Error ? error.message : String(error)}`, { templateName });
+      return this.failure(
+        `Template processing failed: ${error instanceof Error ? error.message : String(error)}`,
+        { templateName },
+      );
     }
   }
 
@@ -112,19 +87,24 @@ export class PromptTemplateBuilder {
   resolveTemplate(template: string): string {
     // Extract all placeholders first
     const placeholders = template.match(/\{\{(\w+)\}\}/g) || [];
-    const componentNames = [...new Set(placeholders.map(p => p.replace(/\{\{|\}\}/g, '')))];
+    const componentNames = [
+      ...new Set(placeholders.map((p) => p.replace(/\{\{|\}\}/g, ""))),
+    ];
 
     // Resolve each component exactly once
     const resolutions = new Map<string, string>();
-    
+
     for (const componentName of componentNames) {
       const content = this.resolveComponent(componentName);
-      
+
       // Check if resolved content contains more placeholders
-      if (content.includes('{{')) {
-        console.warn(`Component '${componentName}' generated content with placeholders:`, content.substring(0, 200));
+      if (content.includes("{{")) {
+        console.warn(
+          `Component '${componentName}' generated content with placeholders:`,
+          content.substring(0, 200),
+        );
       }
-      
+
       resolutions.set(componentName, content);
     }
 
@@ -138,10 +118,18 @@ export class PromptTemplateBuilder {
     // Ignore Mermaid diagram syntax like {{Contact Supplier for Restock}} which contains spaces/special chars
     const unresolvedTemplatePlaceholders = result.match(/\{\{(\w+)\}\}/g) || [];
     if (unresolvedTemplatePlaceholders.length > 0) {
-      console.error('Template still contains unresolved template placeholders:', unresolvedTemplatePlaceholders);
-      console.error('Full result snippet:', result.substring(0, Math.min(500, result.length)));
-      
-      throw new Error(`Template still contains unresolved template placeholders: ${unresolvedTemplatePlaceholders.join(', ')}`);
+      console.error(
+        "Template still contains unresolved template placeholders:",
+        unresolvedTemplatePlaceholders,
+      );
+      console.error(
+        "Full result snippet:",
+        result.substring(0, Math.min(500, result.length)),
+      );
+
+      throw new Error(
+        `Template still contains unresolved template placeholders: ${unresolvedTemplatePlaceholders.join(", ")}`,
+      );
     }
 
     return result.trim();
@@ -157,23 +145,27 @@ export class PromptTemplateBuilder {
         `Component '${componentName}' not found`,
         {
           missingComponent: componentName,
-          availableComponents: Object.keys(this.components)
-        }
+          availableComponents: Object.keys(this.components),
+        },
       );
     }
 
-    if (typeof component.content === 'function') {
+    if (typeof component.content === "function") {
       try {
         return component.content(this.context);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         throw new ComponentResolutionError(
           `Component '${componentName}' failed: ${errorMessage}`,
           {
             componentName,
             availableContext: Object.keys(this.context),
-            missingParameters: this.detectMissingParameters(error instanceof Error ? error : new Error(String(error)), componentName)
-          }
+            missingParameters: this.detectMissingParameters(
+              error instanceof Error ? error : new Error(String(error)),
+              componentName,
+            ),
+          },
         );
       }
     }
@@ -184,20 +176,33 @@ export class PromptTemplateBuilder {
   /**
    * Try to detect missing parameters from error messages
    */
-  private detectMissingParameters(error: Error, _componentName: string): string[] {
+  private detectMissingParameters(
+    error: Error,
+    _componentName: string,
+  ): string[] {
     const errorMessage = error.message.toLowerCase();
     const contextKeys = Object.keys(this.context);
     const missing: string[] = [];
-    
+
     // Common parameter patterns that might be missing
-    const patterns = ['chunkindex', 'totalchunks', 'classname', 'methodname', 'businesscontext', 'codetrace'];
-    
+    const patterns = [
+      "chunkindex",
+      "totalchunks",
+      "classname",
+      "methodname",
+      "businesscontext",
+      "codetrace",
+    ];
+
     for (const pattern of patterns) {
-      if (errorMessage.includes(pattern) && !contextKeys.some(key => key.toLowerCase() === pattern)) {
+      if (
+        errorMessage.includes(pattern) &&
+        !contextKeys.some((key) => key.toLowerCase() === pattern)
+      ) {
         missing.push(pattern);
       }
     }
-    
+
     return missing;
   }
 
@@ -211,16 +216,24 @@ export class PromptTemplateBuilder {
   /**
    * Validate a template and its dependencies
    */
-  static validateTemplate(templateName: string): { valid: boolean; missing?: string[] } {
+  static validateTemplate(templateName: string): {
+    valid: boolean;
+    missing?: string[];
+  } {
     const template = getTemplate(templateName);
     if (!template) {
-      return { valid: false, missing: [`Template '${templateName}' not found`] };
+      return {
+        valid: false,
+        missing: [`Template '${templateName}' not found`],
+      };
     }
 
     // Create a temporary builder to check component availability
     const tempBuilder = new PromptTemplateBuilder({} as PromptBuildContext);
     const missing: string[] = [];
-    const componentNames = PromptTemplateBuilder.extractComponentNames(template.template);
+    const componentNames = PromptTemplateBuilder.extractComponentNames(
+      template.template,
+    );
 
     for (const componentName of componentNames) {
       if (!tempBuilder.components[componentName]) {
@@ -230,7 +243,7 @@ export class PromptTemplateBuilder {
 
     return {
       valid: missing.length === 0,
-      missing: missing.length > 0 ? missing : undefined
+      missing: missing.length > 0 ? missing : undefined,
     };
   }
 
@@ -239,7 +252,7 @@ export class PromptTemplateBuilder {
    */
   static extractComponentNames(template: string): string[] {
     const matches = template.match(/\{\{(\w+)\}\}/g) || [];
-    return matches.map(match => match.replace(/\{\{|\}\}/g, ''));
+    return matches.map((match) => match.replace(/\{\{|\}\}/g, ""));
   }
 }
 
@@ -253,14 +266,17 @@ export class PromptTemplateProcessor {
   buildPrompt(templateName: string, context: PromptBuildContext): string {
     const builder = new PromptTemplateBuilder(context);
     const result = builder.build(templateName);
-    
+
     if (result.success) {
       return result.content;
     } else {
       // For backward compatibility, throw an error with detailed context
       const contextStr = Object.entries(result.context)
-        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-        .join('; ');
+        .map(
+          ([key, value]) =>
+            `${key}: ${Array.isArray(value) ? value.join(", ") : value}`,
+        )
+        .join("; ");
       throw new Error(`${result.error} (${contextStr})`);
     }
   }
@@ -268,7 +284,10 @@ export class PromptTemplateProcessor {
   /**
    * Validate a template and its dependencies
    */
-  validateTemplate(templateName: string): { valid: boolean; missing?: string[] } {
+  validateTemplate(templateName: string): {
+    valid: boolean;
+    missing?: string[];
+  } {
     return PromptTemplateBuilder.validateTemplate(templateName);
   }
 
@@ -278,12 +297,12 @@ export class PromptTemplateProcessor {
   estimateTokens(templateName: string, context: PromptBuildContext): number {
     const builder = new PromptTemplateBuilder(context);
     const result = builder.build(templateName);
-    
+
     if (result.success) {
       // Rough estimation: 1 token per 4 characters (standard approximation)
       return Math.ceil(result.content.length / 4);
     }
-    
+
     return 0;
   }
 
@@ -292,7 +311,7 @@ export class PromptTemplateProcessor {
    */
   processTemplate(template: string, context: PromptBuildContext): string {
     const builder = new PromptTemplateBuilder(context);
-    
+
     // For direct template strings, we bypass the template registry
     try {
       const directResult = builder.resolveTemplate(template);
