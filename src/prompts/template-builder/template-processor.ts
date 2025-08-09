@@ -1,4 +1,4 @@
-import { PromptBuildContext, PromptTemplate, PromptComponent } from './types';
+import { PromptBuildContext, PromptComponent } from './types';
 import { getTemplate } from './templates';
 
 // Direct component imports (no factory pattern)
@@ -10,73 +10,220 @@ import { CodeTraceComponent } from './components/formatting/CodeTraceComponent';
 import { chunkingComponents } from './components/chunking';
 
 /**
- * Simplified template processor with all processing logic in one class
+ * Error thrown when a component cannot be resolved
  */
-export class PromptTemplateProcessor {
-  private componentRegistry: { [name: string]: PromptComponent } = {};
+export class ComponentResolutionError extends Error {
+  constructor(
+    message: string,
+    public readonly context: {
+      componentName?: string;
+      missingComponent?: string;
+      availableComponents?: string[];
+      availableContext?: string[];
+      missingParameters?: string[];
+      templateName?: string;
+    }
+  ) {
+    super(message);
+    this.name = 'ComponentResolutionError';
+  }
+}
 
-  constructor() {
-    this.initializeComponents();
+/**
+ * Result type for template processing
+ */
+export type TemplateResult = {
+  success: true;
+  content: string;
+} | {
+  success: false;
+  error: string;
+  context: {
+    missingComponent?: string;
+    availableContext?: string[];
+    templateName?: string;
+    availableComponents?: string[];
+    missingParameters?: string[];
+  };
+};
+
+/**
+ * Modern template builder with single-pass resolution and clear error handling
+ */
+export class PromptTemplateBuilder {
+  private context: PromptBuildContext;
+  private components: { [name: string]: PromptComponent };
+
+  constructor(context: PromptBuildContext) {
+    this.context = context;
+    this.components = this.buildComponentRegistry();
   }
 
   /**
-   * Register all components directly (no factory pattern)
+   * Build the component registry
    */
-  private initializeComponents(): void {
+  private buildComponentRegistry(): { [name: string]: PromptComponent } {
+    const registry: { [name: string]: PromptComponent } = {};
+    
     // Base components
-    this.componentRegistry.baseInstructions = BaseInstructionsComponent;
-    this.componentRegistry.documentationStyle = DocumentationStyleComponent;
+    registry.baseInstructions = BaseInstructionsComponent;
+    registry.documentationStyle = DocumentationStyleComponent;
 
     // Business components  
-    this.componentRegistry.businessContext = BusinessContextComponent;
-    this.componentRegistry.businessRuleNarrativeFramework = BusinessRuleFrameworkComponent;
+    registry.businessContext = BusinessContextComponent;
+    registry.businessRuleNarrativeFramework = BusinessRuleFrameworkComponent;
 
     // Formatting components
-    this.componentRegistry.codeTrace = CodeTraceComponent;
+    registry.codeTrace = CodeTraceComponent;
 
     // Chunking components
     Object.entries(chunkingComponents).forEach(([name, component]) => {
       if (component) {
-        this.componentRegistry[name] = component;
+        registry[name] = component;
       }
     });
+    
+    return registry;
   }
 
   /**
-   * Build a prompt from a template and context
+   * Build a template with explicit success/failure result
    */
-  buildPrompt(templateName: string, context: PromptBuildContext): string {
+  build(templateName: string): TemplateResult {
     const template = getTemplate(templateName);
     if (!template) {
-      throw new Error(`Template '${templateName}' not found`);
+      return this.failure(`Template '${templateName}' not found`, { templateName });
     }
 
-    return this.processTemplate(template, context);
+    try {
+      const content = this.resolveTemplate(template.template);
+      return { success: true, content };
+    } catch (error) {
+      if (error instanceof ComponentResolutionError) {
+        return this.failure(error.message, { templateName, ...error.context });
+      }
+      return this.failure(`Template processing failed: ${error instanceof Error ? error.message : String(error)}`, { templateName });
+    }
   }
 
+  /**
+   * Resolve template with single-pass processing
+   */
+  resolveTemplate(template: string): string {
+    // Extract all placeholders first
+    const placeholders = template.match(/\{\{(\w+)\}\}/g) || [];
+    const componentNames = [...new Set(placeholders.map(p => p.replace(/\{\{|\}\}/g, '')))];
+
+    // Resolve each component exactly once
+    const resolutions = new Map<string, string>();
+    
+    for (const componentName of componentNames) {
+      const content = this.resolveComponent(componentName);
+      
+      // Check if resolved content contains more placeholders
+      if (content.includes('{{')) {
+        console.warn(`Component '${componentName}' generated content with placeholders:`, content.substring(0, 200));
+      }
+      
+      resolutions.set(componentName, content);
+    }
+
+    // Replace all placeholders in one pass
+    let result = template;
+    for (const [componentName, content] of resolutions) {
+      result = result.replaceAll(`{{${componentName}}}`, content);
+    }
+
+    // Verify complete resolution (sanity check) - only check for unresolved template placeholders
+    // Ignore Mermaid diagram syntax like {{Contact Supplier for Restock}} which contains spaces/special chars
+    const unresolvedTemplatePlaceholders = result.match(/\{\{(\w+)\}\}/g) || [];
+    if (unresolvedTemplatePlaceholders.length > 0) {
+      console.error('Template still contains unresolved template placeholders:', unresolvedTemplatePlaceholders);
+      console.error('Full result snippet:', result.substring(0, Math.min(500, result.length)));
+      
+      throw new Error(`Template still contains unresolved template placeholders: ${unresolvedTemplatePlaceholders.join(', ')}`);
+    }
+
+    return result.trim();
+  }
 
   /**
-   * Process a template (backward compatible for tests)
+   * Resolve a single component
    */
-  private processTemplate(template: PromptTemplate | string, context: PromptBuildContext): string {
-    const templateString = typeof template === 'string' ? template : template.template;
-    return this.render(templateString, context);
+  private resolveComponent(componentName: string): string {
+    const component = this.components[componentName];
+    if (!component) {
+      throw new ComponentResolutionError(
+        `Component '${componentName}' not found`,
+        {
+          missingComponent: componentName,
+          availableComponents: Object.keys(this.components)
+        }
+      );
+    }
+
+    if (typeof component.content === 'function') {
+      try {
+        return component.content(this.context);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new ComponentResolutionError(
+          `Component '${componentName}' failed: ${errorMessage}`,
+          {
+            componentName,
+            availableContext: Object.keys(this.context),
+            missingParameters: this.detectMissingParameters(error instanceof Error ? error : new Error(String(error)), componentName)
+          }
+        );
+      }
+    }
+
+    return component.content;
+  }
+
+  /**
+   * Try to detect missing parameters from error messages
+   */
+  private detectMissingParameters(error: Error, _componentName: string): string[] {
+    const errorMessage = error.message.toLowerCase();
+    const contextKeys = Object.keys(this.context);
+    const missing: string[] = [];
+    
+    // Common parameter patterns that might be missing
+    const patterns = ['chunkindex', 'totalchunks', 'classname', 'methodname', 'businesscontext', 'codetrace'];
+    
+    for (const pattern of patterns) {
+      if (errorMessage.includes(pattern) && !contextKeys.some(key => key.toLowerCase() === pattern)) {
+        missing.push(pattern);
+      }
+    }
+    
+    return missing;
+  }
+
+  /**
+   * Helper to create failure results
+   */
+  private failure(error: string, context: any): TemplateResult {
+    return { success: false, error, context };
   }
 
   /**
    * Validate a template and its dependencies
    */
-  validateTemplate(templateName: string): { valid: boolean; missing?: string[] } {
+  static validateTemplate(templateName: string): { valid: boolean; missing?: string[] } {
     const template = getTemplate(templateName);
     if (!template) {
       return { valid: false, missing: [`Template '${templateName}' not found`] };
     }
 
+    // Create a temporary builder to check component availability
+    const tempBuilder = new PromptTemplateBuilder({} as PromptBuildContext);
     const missing: string[] = [];
-    const componentNames = this.extractComponentNames(template.template);
+    const componentNames = PromptTemplateBuilder.extractComponentNames(template.template);
 
     for (const componentName of componentNames) {
-      if (!this.componentRegistry[componentName]) {
+      if (!tempBuilder.components[componentName]) {
         missing.push(componentName);
       }
     }
@@ -88,79 +235,81 @@ export class PromptTemplateProcessor {
   }
 
   /**
-   * Render a template string by replacing placeholders with component content
-   */
-  private render(template: string, context: PromptBuildContext): string {
-    let processed = template;
-    let maxIterations = 10; // Prevent infinite loops
-    let iteration = 0;
-    
-    // Keep processing until no more placeholders are found or max iterations reached
-    while (processed.includes('{{') && iteration < maxIterations) {
-      processed = processed.replace(/\{\{(\w+)\}\}/g, (match, componentName) => {
-        return this.getComponentContent(componentName, context);
-      });
-      iteration++;
-    }
-
-    if (iteration >= maxIterations) {
-      console.warn('Template processing reached maximum iterations - possible circular references');
-    }
-    
-    return processed.trim();
-  }
-
-
-  /**
-   * Get component content with context (no caching)
-   */
-  private getComponentContent(componentName: string, context: PromptBuildContext): string {
-    const component = this.componentRegistry[componentName];
-    if (!component) {
-      console.warn(`Component '${componentName}' not found in registry`);
-      return `{{${componentName}}}`;
-    }
-
-    if (typeof component.content === 'function') {
-      return component.content(context);
-    }
-
-    return component.content;
-  }
-
-  /**
    * Extract all component names from a template
    */
-  private extractComponentNames(template: string): string[] {
+  static extractComponentNames(template: string): string[] {
     const matches = template.match(/\{\{(\w+)\}\}/g) || [];
     return matches.map(match => match.replace(/\{\{|\}\}/g, ''));
+  }
+}
+
+/**
+ * Legacy PromptTemplateProcessor for backward compatibility
+ */
+export class PromptTemplateProcessor {
+  /**
+   * Build a prompt from a template and context (legacy API)
+   */
+  buildPrompt(templateName: string, context: PromptBuildContext): string {
+    const builder = new PromptTemplateBuilder(context);
+    const result = builder.build(templateName);
+    
+    if (result.success) {
+      return result.content;
+    } else {
+      // For backward compatibility, throw an error with detailed context
+      const contextStr = Object.entries(result.context)
+        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+        .join('; ');
+      throw new Error(`${result.error} (${contextStr})`);
+    }
+  }
+
+  /**
+   * Validate a template and its dependencies
+   */
+  validateTemplate(templateName: string): { valid: boolean; missing?: string[] } {
+    return PromptTemplateBuilder.validateTemplate(templateName);
   }
 
   /**
    * Estimate token count for a template
    */
   estimateTokens(templateName: string, context: PromptBuildContext): number {
-    const template = getTemplate(templateName);
-    if (!template) {
-      return 0;
+    const builder = new PromptTemplateBuilder(context);
+    const result = builder.build(templateName);
+    
+    if (result.success) {
+      // Rough estimation: 1 token per 4 characters (standard approximation)
+      return Math.ceil(result.content.length / 4);
     }
-
-    const rendered = this.render(template.template, context);
-    // Rough estimation: 1 token per 4 characters (standard approximation)
-    return Math.ceil(rendered.length / 4);
+    
+    return 0;
   }
 
   /**
-   * Legacy methods for backward compatibility (now no-ops since no caching)
+   * Process a template directly (legacy API for tests)
    */
-  preloadComponents(_context: PromptBuildContext): void {
-    // No-op since we removed caching
+  processTemplate(template: string, context: PromptBuildContext): string {
+    const builder = new PromptTemplateBuilder(context);
+    
+    // For direct template strings, we bypass the template registry
+    try {
+      const directResult = builder.resolveTemplate(template);
+      return directResult;
+    } catch (error) {
+      if (error instanceof ComponentResolutionError) {
+        throw new Error(`${error.message} (${JSON.stringify(error.context)})`);
+      }
+      throw error;
+    }
   }
 
-  clearCache(): void {
-    // No-op since we removed caching
-  }
-
+  /**
+   * Legacy methods for backward compatibility (no-ops)
+   */
+  preloadComponents(_context: PromptBuildContext): void {}
+  clearCache(): void {}
   getCacheStats(): { size: number; hitRate?: number } {
     return { size: 0 };
   }

@@ -9,50 +9,8 @@ export const singleShotTemplate: PromptTemplate = {
 
 {{businessContext}}
 
-{{singleShotNote}}
-
 {{codeTrace}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'singleShotNote', 'codeTrace']
-};
-
-/**
- * Template for the first chunk in multi-chunk processing
- */
-export const firstChunkTemplate: PromptTemplate = {
-  name: 'first-chunk',
-  template: `{{baseInstructions}}
-
-{{businessContext}}
-
-## Processing Instructions for Chunk {{chunkPosition}}
-
-This is the FIRST chunk of a larger code trace. Create the beginning of a business process document following the structure requirements above.
-
-{{firstChunkInstructions}}
-
-{{codeTrace}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'chunkPosition', 'firstChunkInstructions', 'codeTrace']
-};
-
-/**
- * Template for middle chunks in multi-chunk processing
- */
-export const middleChunkTemplate: PromptTemplate = {
-  name: 'middle-chunk',
-  template: `{{baseInstructions}}
-
-{{businessContext}}
-
-## Processing Instructions for Chunk {{chunkPosition}}
-
-This is chunk {{chunkPosition}} in a larger code trace. Continue building the business process document.
-
-{{previousDocumentContext}}
-
-{{middleChunkInstructions}}
-
-{{codeTrace}}`,
-  requiredComponents: ['baseInstructions', 'businessContext', 'chunkPosition', 'previousDocumentContext', 'middleChunkInstructions', 'codeTrace']
+  requiredComponents: ['baseInstructions', 'businessContext', 'codeTrace']
 };
 
 /**
@@ -60,10 +18,16 @@ This is chunk {{chunkPosition}} in a larger code trace. Continue building the bu
  */
 export const chunkAnalysisTemplate: PromptTemplate = {
   name: 'chunk-analysis',
-  template: `{{chunkAnalysisInstructions}}
+  template: `{{baseInstructions}}
+
+{{businessContext}}
+
+{{chunkAnalysisInstructions}}
+
+{{previousDocumentContext}}
 
 {{codeTrace}}`,
-  requiredComponents: ['chunkAnalysisInstructions', 'codeTrace']
+  requiredComponents: ['baseInstructions', 'businessContext', 'chunkAnalysisInstructions', 'codeTrace']
 };
 
 /**
@@ -86,8 +50,6 @@ export const consolidationTemplate: PromptTemplate = {
  */
 export const promptTemplates = {
   'single-shot': singleShotTemplate,
-  'first-chunk': firstChunkTemplate,
-  'middle-chunk': middleChunkTemplate,
   'chunk-analysis': chunkAnalysisTemplate,
   'consolidation': consolidationTemplate
 };

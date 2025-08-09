@@ -129,6 +129,11 @@
           "maxLength": 4000,
           "description": "Business domain context to improve documentation examples. Describe your specific business domain, product types, or industry context to generate more relevant examples.",
           "editPresentation": "multilineText"
+        },
+        "dotnetFlow.debug.savePrompts": {
+          "type": "boolean",
+          "default": false,
+          "description": "Save LLM prompts and responses to .debug/prompts/ for debugging (overwrites on each run)"
         }
       }
     }

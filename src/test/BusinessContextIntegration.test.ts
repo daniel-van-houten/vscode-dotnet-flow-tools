@@ -371,13 +371,11 @@ suite('Business Context Integration Tests', () => {
       // Assert: Verify correct positioning
       const baseInstructionsIndex = prompt.indexOf('## Primary Instruction');
       const businessContextIndex = prompt.indexOf('## Business Domain Context');
-      const singleShotNoteIndex = prompt.indexOf('Note: You are receiving the complete code trace');
       const codeTraceIndex = prompt.indexOf('<code_trace>');
 
-      // Verify order: base instructions -> business context -> single shot note -> code trace
+      // Verify order: base instructions -> business context -> code trace
       assert.ok(baseInstructionsIndex < businessContextIndex, 'Base instructions should come before business context');
-      assert.ok(businessContextIndex < singleShotNoteIndex, 'Business context should come before single shot note');
-      assert.ok(singleShotNoteIndex < codeTraceIndex, 'Single shot note should come before code trace');
+      assert.ok(businessContextIndex < codeTraceIndex, 'Business context should come before code trace');
     });
 
     test('should maintain proper spacing and formatting around business context', () => {

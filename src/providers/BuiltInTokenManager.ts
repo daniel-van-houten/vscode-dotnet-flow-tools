@@ -7,6 +7,7 @@ export class BuiltInTokenManager implements ITokenManager {
   // Common token limits for VS Code Language Model API providers
   private static readonly MODEL_LIMITS: ModelTokenLimits[] = [
     // GitHub Copilot models (estimated limits based on known models)
+    { modelId: 'gpt-5', maxInput: 100000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
     { modelId: 'gpt-4o', maxInput: 110000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
     { modelId: 'gpt-4.1', maxInput: 110000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
     { modelId: 'claude-3-5-sonnet', maxInput: 110000, maxOutput: 8192, contextWindow: 200000, estimationRatio: 3.5 },
