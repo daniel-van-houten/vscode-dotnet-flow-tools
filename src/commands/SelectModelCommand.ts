@@ -5,6 +5,7 @@ import { ServiceContainer, ServiceKeys } from '../core/ServiceContainer';
 import { IConfigService } from '../services/IConfigService';
 import { ProviderRegistry } from '../providers/ProviderRegistry';
 import { initializeProviderSystem } from '../providers';
+import { suspendConfigWatcher } from '../core/ConfigWatcherGate';
 
 /**
  * Command to select AI model for documentation generation
@@ -134,8 +135,14 @@ export class SelectModelCommand extends BaseCommand {
       return;
     }
 
-    await configService.update('provider', picked.providerId as 'built-in' | 'bedrock');
-    await configService.update('modelId', picked.id);
+    // Suspend watcher while applying both values programmatically
+    const resume = suspendConfigWatcher();
+    try {
+      await configService.update('modelId', picked.id);
+      await configService.update('provider', picked.providerId as 'built-in' | 'bedrock');
+    } finally {
+      resume();
+    }
     
     // Reinitialize provider with new model
     const workspaceConfig = vscode.workspace.getConfiguration('dotnetFlow');

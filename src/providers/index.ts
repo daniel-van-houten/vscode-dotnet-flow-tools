@@ -40,13 +40,13 @@ export async function initializeProviderSystem(
 ): Promise<void> {
   const providerId = config.get<string>('provider', 'built-in');
   const modelId = config.get<string>('modelId', '');
-  
+
   try {
     await registry.initializeProvider(providerId, config, modelId, context);
     console.log(`Provider system initialized with provider: ${providerId}, model: ${modelId || 'none'}`);
   } catch (error) {
     console.error('Failed to initialize provider system:', error);
-    
+
     // Generic fallback to built-in provider for any initialization failure
     if (providerId !== 'built-in' && registry.hasProvider('built-in')) {
       console.log('Falling back to built-in provider');

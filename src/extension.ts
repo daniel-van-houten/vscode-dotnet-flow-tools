@@ -3,6 +3,7 @@ import { setupServices } from './core/ServiceSetup';
 import { ServiceContainer, ServiceKeys } from './core/ServiceContainer';
 import { CommandRegistry } from './commands/CommandRegistry';
 import { initializeProviderSystem, ProviderRegistry } from './providers';
+import { isConfigWatcherSuspended } from './core/ConfigWatcherGate';
 import { ILogger } from './core/Logger';
 import { ContentLoader } from './prompts/template-builder/content-loader';
 
@@ -58,10 +59,16 @@ function setupConfigurationWatcher(
   logger: ILogger
 ): void {
   const configWatcher = vscode.workspace.onDidChangeConfiguration(async (event) => {
-    if (event.affectsConfiguration('dotnetFlow.provider') || 
-        event.affectsConfiguration('dotnetFlow.modelId') ||
-        event.affectsConfiguration('dotnetFlow.awsProfile') ||
-        event.affectsConfiguration('dotnetFlow.awsRegion')) {
+    if (
+      event.affectsConfiguration('dotnetFlow.provider') ||
+      event.affectsConfiguration('dotnetFlow.modelId') ||
+      event.affectsConfiguration('dotnetFlow.awsProfile') ||
+      event.affectsConfiguration('dotnetFlow.awsRegion')
+    ) {
+      if (isConfigWatcherSuspended()) {
+        logger.info('Config watcher suspended; skipping reinitialization');
+        return;
+      }
       try {
         await initializeProviderSystem(providerRegistry, vscode.workspace.getConfiguration('dotnetFlow'), context);
         logger.info('Provider system reinitialized due to configuration change');
