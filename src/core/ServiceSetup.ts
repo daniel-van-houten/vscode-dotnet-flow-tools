@@ -7,6 +7,7 @@ import { FileService } from "../services/FileService";
 import { SymbolService } from "../services/SymbolService";
 import { TraceService } from "../services/TraceService";
 import { createProviderRegistry } from "../providers";
+import { SolutionResolver } from "../services/SolutionResolver";
 
 /**
  * Setup and configure all services in the container
@@ -29,6 +30,10 @@ export function setupServices(
   container.register(ServiceKeys.FILE_SERVICE, new FileService());
   container.register(ServiceKeys.SYMBOL_SERVICE, new SymbolService());
   container.register(ServiceKeys.TRACE_SERVICE, new TraceService());
+  container.register(
+    ServiceKeys.SOLUTION_RESOLVER,
+    new SolutionResolver(context),
+  );
 
   // Register provider registry
   container.register(

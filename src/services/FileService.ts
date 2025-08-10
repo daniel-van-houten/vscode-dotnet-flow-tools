@@ -1,13 +1,17 @@
-import * as vscode from 'vscode';
-import { IFileService } from './IFileService';
-import { ResourceNotFoundError } from '../core/ErrorTypes';
-import * as path from 'path';
+import * as vscode from "vscode";
+import { IFileService } from "./IFileService";
+import { ResourceNotFoundError } from "../core/ErrorTypes";
+import * as path from "path";
 
 /**
  * Implementation of file service using VS Code APIs
  */
 export class FileService implements IFileService {
-  async findFiles(pattern: string, exclude?: string, maxResults?: number): Promise<vscode.Uri[]> {
+  async findFiles(
+    pattern: string,
+    exclude?: string,
+    maxResults?: number,
+  ): Promise<vscode.Uri[]> {
     return vscode.workspace.findFiles(pattern, exclude, maxResults);
   }
 
@@ -15,18 +19,41 @@ export class FileService implements IFileService {
     // Ensure parent directory exists (e.g., for .flowdocs/)
     const dirPath = path.dirname(uri.fsPath);
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(dirPath));
-    await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(content, "utf8"));
   }
 
   async openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
     return vscode.workspace.openTextDocument(uri);
   }
 
-  createWorkspaceUri(relativePath: string): vscode.Uri {
-    if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-      throw new ResourceNotFoundError('No workspace folder found', 'workspace');
+  createWorkspaceUri(
+    relativePath: string,
+    workspaceFolder?: vscode.WorkspaceFolder,
+  ): vscode.Uri {
+    // Prefer explicitly provided workspace folder
+    let folder = workspaceFolder;
+
+    // Fall back to the active document's workspace folder
+    if (!folder && vscode.window.activeTextEditor) {
+      folder =
+        vscode.workspace.getWorkspaceFolder(
+          vscode.window.activeTextEditor.document.uri,
+        ) ?? undefined;
     }
-    
-    return vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, relativePath);
+
+    // Fall back to the first workspace folder
+    if (
+      !folder &&
+      vscode.workspace.workspaceFolders &&
+      vscode.workspace.workspaceFolders.length > 0
+    ) {
+      folder = vscode.workspace.workspaceFolders[0];
+    }
+
+    if (!folder) {
+      throw new ResourceNotFoundError("No workspace folder found", "workspace");
+    }
+
+    return vscode.Uri.joinPath(folder.uri, relativePath);
   }
 }

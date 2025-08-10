@@ -39,6 +39,15 @@ Smart chunking for large codebases, business context integration, and progress t
 - **.NET Solution**: Your project must contain a `.sln` solution file
 - **AI Provider**: Either built-in VSCode language models or AWS Bedrock access
 
+### Multi-solution Workspaces
+- The extension scopes analysis to the workspace folder that contains your active file.
+- It resolves the correct solution by:
+  1) Finding the nearest project file (.csproj/.fsproj) for the active file, then
+  2) Matching that project to solution(s) within the same workspace folder.
+- If multiple solutions match (or no clear match is found), you’ll be prompted to select one. You can choose to remember your selection for that workspace folder.
+- Optional: Set `dotnetFlow.defaultSolution` (per workspace folder) to prefer a specific solution when multiple `.sln` files exist.
+- Generated documentation is saved under the matching workspace folder (e.g., `.flowdocs/`).
+
 ## Getting Started
 
 ### 1. Install the Extension
@@ -72,6 +81,7 @@ Install "Dotnet Flow Tools" Extension
 | `dotnetFlow.businessContext` | Business domain context for better examples | _(empty)_ |
 | `dotnetFlow.awsProfile` | AWS profile for Bedrock provider | `default` |
 | `dotnetFlow.awsRegion` | AWS region for Bedrock provider | `us-east-1` |
+| `dotnetFlow.defaultSolution` | Preferred solution path or filename for this workspace folder when multiple `.sln` files exist | _(empty)_ |
 
 ### Business Context Examples
 Provide context about your domain to get more relevant documentation:

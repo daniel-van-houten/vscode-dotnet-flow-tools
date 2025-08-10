@@ -4,11 +4,10 @@ import { BaseCommand } from "../core/BaseCommand";
 import { ILogger } from "../core/Logger";
 import { ServiceContainer, ServiceKeys } from "../core/ServiceContainer";
 import { ICliService } from "../services/ICliService";
-import { IFileService } from "../services/IFileService";
 import { ISymbolService } from "../services/ISymbolService";
 import { IConfigService } from "../services/IConfigService";
-import { ResourceNotFoundError, ValidationError } from "../core/ErrorTypes";
-import { FILE_PATTERNS } from "../config/ConfigConstants";
+import { ValidationError } from "../core/ErrorTypes";
+import { ISolutionResolver } from "../services/ISolutionResolver";
 
 /**
  * Trace generation strategy
@@ -85,8 +84,8 @@ export class TraceCommand extends BaseCommand {
         const symbolService = this.serviceContainer.get<ISymbolService>(
           ServiceKeys.SYMBOL_SERVICE,
         );
-        const fileService = this.serviceContainer.get<IFileService>(
-          ServiceKeys.FILE_SERVICE,
+        const solutionResolver = this.serviceContainer.get<ISolutionResolver>(
+          ServiceKeys.SOLUTION_RESOLVER,
         );
         const cliService = this.serviceContainer.get<ICliService>(
           ServiceKeys.CLI_SERVICE,
@@ -117,17 +116,12 @@ export class TraceCommand extends BaseCommand {
           );
         }
 
-        const solutions = await fileService.findFiles(
-          FILE_PATTERNS.SOLUTION,
-          undefined,
-          1,
+        const resolution = await solutionResolver.resolveForDocument(
+          editor.document,
+          { allowPrompt: true, rememberChoice: true, cancellationToken: token },
         );
-        if (solutions.length === 0) {
-          throw new ResourceNotFoundError(
-            "Solution (.sln) not found",
-            "solution",
-          );
-        }
+        const solutionUri = resolution.solution;
+        const workspaceFolder = resolution.workspaceFolder;
 
         if (token.isCancellationRequested) {
           return;
@@ -139,7 +133,7 @@ export class TraceCommand extends BaseCommand {
           cliService,
           configService,
           extensionContext.extensionPath,
-          solutions[0],
+          solutionUri,
           symbolInfo.class.name,
           symbolInfo.method.name,
           "graph",

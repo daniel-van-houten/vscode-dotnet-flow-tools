@@ -12,6 +12,7 @@ import { processDocumentationWithChunking, analyzeTrace } from "../prompts";
 import { ResourceNotFoundError, ValidationError } from "../core/ErrorTypes";
 import { FILE_PATTERNS } from "../config/ConfigConstants";
 import { resetPromptSequence } from "../core/DebugLogger";
+import { ISolutionResolver } from "../services/ISolutionResolver";
 
 /**
  * Command to generate comprehensive business documentation from C# methods
@@ -34,7 +35,7 @@ export class DocumentThisCommand extends BaseCommand {
       const trace = await this.generateCodeTrace(
         context.cliService,
         context.configService,
-        context.solutions[0],
+        context.solutionUri,
         context.symbolInfo.class.name,
         context.symbolInfo.method.name,
       );
@@ -74,6 +75,7 @@ export class DocumentThisCommand extends BaseCommand {
         result.content,
         context.symbolInfo.class.name,
         context.symbolInfo.method.name,
+        context.workspaceFolder,
       );
 
       progress.report({ increment: 100, message: "Documentation complete!" });
@@ -103,6 +105,9 @@ export class DocumentThisCommand extends BaseCommand {
     const providerRegistry = this.serviceContainer.get<ProviderRegistry>(
       ServiceKeys.PROVIDER_REGISTRY,
     );
+    const solutionResolver = this.serviceContainer.get<ISolutionResolver>(
+      ServiceKeys.SOLUTION_RESOLVER,
+    );
 
     const symbolInfo = await symbolService.findMethodAtPosition(
       editor.document,
@@ -112,14 +117,12 @@ export class DocumentThisCommand extends BaseCommand {
       throw new ValidationError("Put cursor inside a method within a class.");
     }
 
-    const solutions = await fileService.findFiles(
-      FILE_PATTERNS.SOLUTION,
-      undefined,
-      1,
+    const resolution = await solutionResolver.resolveForDocument(
+      editor.document,
+      { allowPrompt: true, rememberChoice: true, cancellationToken: token },
     );
-    if (solutions.length === 0) {
-      throw new ResourceNotFoundError("Solution (.sln) not found", "solution");
-    }
+    const solutionUri = resolution.solution;
+    const workspaceFolder = resolution.workspaceFolder;
 
     if (token.isCancellationRequested) {
       throw new vscode.CancellationError();
@@ -157,7 +160,8 @@ export class DocumentThisCommand extends BaseCommand {
       configService,
       provider,
       symbolInfo,
-      solutions,
+      solutionUri,
+      workspaceFolder,
     };
   }
 
@@ -256,13 +260,17 @@ export class DocumentThisCommand extends BaseCommand {
     content: string,
     className: string,
     methodName: string,
+    workspaceFolder: vscode.WorkspaceFolder,
   ): Promise<void> {
     const fileName = FILE_PATTERNS.DOCUMENTATION.replace(
       "{className}",
       className,
     ).replace("{methodName}", methodName);
 
-    const documentUri = fileService.createWorkspaceUri(fileName);
+    const documentUri = fileService.createWorkspaceUri(
+      fileName,
+      workspaceFolder,
+    );
 
     await fileService.writeFile(documentUri, content);
     const document = await fileService.openTextDocument(documentUri);
