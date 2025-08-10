@@ -10,6 +10,7 @@ import {
   parseCombinedModel,
   formatCombinedModel,
 } from "../providers/modelSetting";
+import { getProviderDisplayName as getProviderDisplayNameFromCatalog } from "../providers/model-catalog";
 
 /**
  * Command to select AI model for documentation generation
@@ -37,8 +38,8 @@ export class SelectModelCommand extends BaseCommand {
     let currentModelId = "";
     const parsed = parseCombinedModel(config.model);
     if (parsed) {
-      currentProvider = parsed.providerId;
-      currentModelId = parsed.modelToken;
+      currentProvider = parsed.providerId.trim();
+      currentModelId = parsed.modelToken.trim();
     }
 
     // Get all available providers
@@ -73,7 +74,7 @@ export class SelectModelCommand extends BaseCommand {
     for (const providerId of allProviderIds) {
       try {
         const models = await providerRegistry.getModelsForProvider(providerId);
-        const providerName = this.getProviderDisplayName(providerId);
+        const providerName = getProviderDisplayNameFromCatalog(providerId);
 
         for (const model of models) {
           allModels.push({
@@ -188,19 +189,5 @@ export class SelectModelCommand extends BaseCommand {
     vscode.window.showInformationMessage(
       `✅ Will use ${picked.modelName} from ${picked.providerName} for future documentation runs.`,
     );
-  }
-
-  /**
-   * Get display name for a provider ID
-   */
-  private getProviderDisplayName(providerId: string): string {
-    const displayNames: Record<string, string> = {
-      bedrock: "AWS Bedrock",
-      "built-in": "VS Code Built-in",
-      openai: "OpenAI",
-      azure: "Azure OpenAI",
-    };
-
-    return displayNames[providerId] || providerId;
   }
 }

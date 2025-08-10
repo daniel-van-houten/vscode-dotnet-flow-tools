@@ -10,6 +10,7 @@ import { BedrockTokenManager } from "./BedrockTokenManager";
 import { BedrockProviderError } from "../core/ErrorTypes";
 import { savePromptDebug } from "../core/DebugLogger";
 import { getCatalogModelsForProvider } from "./model-catalog";
+import { COMMANDS } from "../config/ConfigConstants";
 
 import {
   BedrockRuntimeClient,
@@ -254,7 +255,7 @@ export class BedrockProvider implements IModelProvider {
       )
       .then((selection) => {
         if (selection === "Select AI Model") {
-          vscode.commands.executeCommand("dotnet-flow-tools.selectModel");
+          vscode.commands.executeCommand(COMMANDS.SELECT_MODEL);
         } else if (selection === "Configure AWS") {
           vscode.env.openExternal(
             vscode.Uri.parse(

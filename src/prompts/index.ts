@@ -1,5 +1,6 @@
-import { processDocumentation, analyzeProcessingApproach } from './chunking';
-import { IModelProvider } from '../providers/IModelProvider';
+import { processDocumentation, analyzeProcessingApproach } from "./chunking";
+import { IModelProvider } from "../providers/IModelProvider";
+import { getProviderDisplayName as getProviderDisplayNameFromCatalog } from "../providers/model-catalog";
 
 /**
  * Main unified processing function for documentation generation
@@ -11,10 +12,10 @@ export async function processDocumentationWithChunking(
   context: { className: string; methodName: string },
   businessContext?: string,
   cancellationToken?: any, // vscode.CancellationToken
-  progressCallback?: (message: string, increment?: number) => void
+  progressCallback?: (message: string, increment?: number) => void,
 ): Promise<{
   content: string;
-  approach: 'single-shot' | 'chunked';
+  approach: "single-shot" | "chunked";
   chunkCount?: number;
 }> {
   const result = await processDocumentation(
@@ -23,22 +24,23 @@ export async function processDocumentationWithChunking(
     context,
     businessContext,
     cancellationToken,
-    progressCallback
+    progressCallback,
   );
 
   // Append model metadata to the document
-  const modelInfo = getProviderDisplayName(provider);
+  const modelInfo = getProviderDisplayNameFromCatalog(provider.id);
   const timestamp = new Date().toLocaleString();
-  const approachText = result.approach === 'single-shot'
-    ? 'Single-shot'
-    : `Chunked (${result.chunkCount} ${result.chunkCount === 1 ? 'chunk' : 'chunks'})`;
+  const approachText =
+    result.approach === "single-shot"
+      ? "Single-shot"
+      : `Chunked (${result.chunkCount} ${result.chunkCount === 1 ? "chunk" : "chunks"})`;
 
   const metadata = `\n\n---\n\n**Documentation Generation Details**\n- Model Used: ${modelInfo}\n- Processing Approach: ${approachText}\n- Generated: ${timestamp}\n\n---`;
 
   return {
     content: result.content + metadata,
     approach: result.approach,
-    chunkCount: result.chunkCount
+    chunkCount: result.chunkCount,
   };
 }
 
@@ -47,9 +49,9 @@ export async function processDocumentationWithChunking(
  */
 export async function analyzeTrace(
   traceContent: string,
-  provider: IModelProvider
+  provider: IModelProvider,
 ): Promise<{
-  approach: 'single-shot' | 'chunked';
+  approach: "single-shot" | "chunked";
   estimatedTokens: number;
   maxTokens: number;
   chunkCount?: number;
@@ -68,10 +70,10 @@ export async function processDocumentationWithExperimentalChunking(
   context: { className: string; methodName: string },
   _desiredChunkCount: number = 2, // Parameter kept for backward compatibility but ignored
   businessContext?: string,
-  cancellationToken?: any // vscode.CancellationToken
+  cancellationToken?: any, // vscode.CancellationToken
 ): Promise<{
   content: string;
-  approach: 'chunked';
+  approach: "chunked";
   chunkCount: number;
   desiredChunkCount: number;
 }> {
@@ -81,30 +83,26 @@ export async function processDocumentationWithExperimentalChunking(
     provider,
     context,
     businessContext,
-    cancellationToken
+    cancellationToken,
   );
 
   // Append model metadata to the document
-  const modelInfo = getProviderDisplayName(provider);
+  const modelInfo = getProviderDisplayNameFromCatalog(provider.id);
   const timestamp = new Date().toLocaleString();
-  const chunkText = result.chunkCount === 1 ? 'chunk' : 'chunks';
+  const chunkText = result.chunkCount === 1 ? "chunk" : "chunks";
   const metadata = `\n\n---\n\n**Documentation Generation Details**\n- Model Used: ${modelInfo}\n- Processing Approach: Adaptive Chunking (${result.chunkCount} ${chunkText})\n- Generated: ${timestamp}\n\n---`;
 
   return {
     content: result.content + metadata,
-    approach: 'chunked',
+    approach: "chunked",
     chunkCount: result.chunkCount,
-    desiredChunkCount: result.chunkCount // Return actual count for compatibility
+    desiredChunkCount: result.chunkCount, // Return actual count for compatibility
   };
 }
 
 /**
- * Helper function to get a friendly display name for the provider
+ * Display names provided by providers/model-catalog.getProviderDisplayName
  */
-function getProviderDisplayName(provider: IModelProvider): string {
-  return `${provider.id} provider`;
-}
-
 
 // Re-export types for convenience
-export type { PromptComponent } from './template-builder/types';
+export type { PromptComponent } from "./template-builder/types";

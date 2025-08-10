@@ -240,7 +240,7 @@ Acceptance:
 - [x] No global/singleton `RateLimiter`; Bedrock uses a local instance.
 - [x] “Select a model” error shows up in the right situations.
 - [x] Combined model values are consistently parsed/written.
-- [ ] CLI invocation code lives in a single service.
+- [x] CLI invocation code lives in a single service.
 - [ ] Model logging is quiet by default; debug-gated when needed.
 - [ ] BuiltIn token limits rely on live info when available; static mappings are clean.
 - [ ] CLI errors guide users to the right fix; `cliBuild` is either supported or removed.

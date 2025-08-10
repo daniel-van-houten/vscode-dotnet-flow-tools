@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as path from "node:path";
+import { ITraceService } from "../services/ITraceService";
 import { BaseCommand } from "../core/BaseCommand";
 import { ILogger } from "../core/Logger";
 import { ServiceContainer, ServiceKeys } from "../core/ServiceContainer";
@@ -235,25 +235,20 @@ export class DocumentThisCommand extends BaseCommand {
     const extensionContext = this.serviceContainer.get<vscode.ExtensionContext>(
       ServiceKeys.EXTENSION_CONTEXT,
     );
-    const cliPath = configService.getCliPath(extensionContext.extensionPath);
+    const traceService = this.serviceContainer.get<ITraceService>(
+      ServiceKeys.TRACE_SERVICE,
+    );
 
-    const args = [
-      `-s`,
-      solutionUri.fsPath,
-      `-c`,
+    return await traceService.generateTrace(
+      cliService,
+      configService,
+      extensionContext.extensionPath,
+      solutionUri,
       className,
-      `-m`,
       methodName,
-      `-v`,
       "graph,code",
-      `--methods-only`,
-    ];
-
-    const result = await cliService.execute(cliPath, args, {
-      cwd: path.dirname(solutionUri.fsPath),
-    });
-
-    return result.stdout;
+      ["--methods-only"],
+    );
   }
 
   private async saveAndOpenDocumentation(
