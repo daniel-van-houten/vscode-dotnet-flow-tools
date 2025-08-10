@@ -31,5 +31,5 @@ export const COMMANDS = {
  */
 export const FILE_PATTERNS = {
   SOLUTION: '**/*.sln',
-  DOCUMENTATION: 'Flow.{className}.{methodName}.md'
+  DOCUMENTATION: '.flowdocs/Flow.{className}.{methodName}.md'
 } as const;

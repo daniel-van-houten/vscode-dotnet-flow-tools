@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { IFileService } from './IFileService';
 import { ResourceNotFoundError } from '../core/ErrorTypes';
+import * as path from 'path';
 
 /**
  * Implementation of file service using VS Code APIs
@@ -11,6 +12,9 @@ export class FileService implements IFileService {
   }
 
   async writeFile(uri: vscode.Uri, content: string): Promise<void> {
+    // Ensure parent directory exists (e.g., for .flowdocs/)
+    const dirPath = path.dirname(uri.fsPath);
+    await vscode.workspace.fs.createDirectory(vscode.Uri.file(dirPath));
     await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
   }
 
