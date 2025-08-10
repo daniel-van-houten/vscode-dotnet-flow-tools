@@ -1,12 +1,12 @@
-import { ComponentRegistry, PromptBuildContext } from './types';
+import { ComponentRegistry, PromptBuildContext } from "./types";
 
 // Direct component imports
-import { BaseInstructionsComponent } from './components/base/BaseInstructionsComponent';
-import { DocumentationStyleComponent } from './components/base/DocumentationStyleComponent';
-import { BusinessContextComponent } from './components/business/BusinessContextComponent';
-import { BusinessRuleFrameworkComponent } from './components/business/BusinessRuleFrameworkComponent';
-import { CodeTraceComponent } from './components/formatting/CodeTraceComponent';
-import { chunkingComponents } from './components/chunking';
+import { BaseInstructionsComponent } from "./components/base/BaseInstructionsComponent";
+
+import { BusinessContextComponent } from "./components/business/BusinessContextComponent";
+
+import { CodeTraceComponent } from "./components/formatting/CodeTraceComponent";
+import { chunkingComponents } from "./components/chunking";
 
 /**
  * Registry of all prompt components (backward compatibility)
@@ -14,30 +14,31 @@ import { chunkingComponents } from './components/chunking';
 export const promptComponents: ComponentRegistry = {
   // Base components
   baseInstructions: BaseInstructionsComponent,
-  documentationStyle: DocumentationStyleComponent,
 
-  // Business components  
+  // Business components
   businessContext: BusinessContextComponent,
-  businessRuleNarrativeFramework: BusinessRuleFrameworkComponent,
 
   // Formatting components
   codeTrace: CodeTraceComponent,
 
   // Chunking components
-  ...chunkingComponents
+  ...chunkingComponents,
 };
 
 /**
  * Helper function to get a component's content (backward compatibility)
  */
-export function getComponentContent(componentName: string, context: PromptBuildContext): string {
+export function getComponentContent(
+  componentName: string,
+  context: PromptBuildContext,
+): string {
   const component = promptComponents[componentName];
   if (!component) {
     console.warn(`Component '${componentName}' not found in registry`);
     return `{{${componentName}}}`;
   }
 
-  if (typeof component.content === 'function') {
+  if (typeof component.content === "function") {
     return component.content(context);
   }
 

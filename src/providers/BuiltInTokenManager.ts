@@ -1,30 +1,59 @@
-import * as vscode from 'vscode';
-import { ITokenManager, TokenUsage, ModelTokenLimits } from './ITokenManager';
+import * as vscode from "vscode";
+import { ITokenManager, TokenUsage, ModelTokenLimits } from "./ITokenManager";
 
 export class BuiltInTokenManager implements ITokenManager {
-  readonly providerId = 'built-in';
+  readonly providerId = "built-in";
 
-  // Common token limits for VS Code Language Model API providers
+  /**
+   * Static fallback token limits for known VS Code Language Model API providers.
+   * We prefer live limits from the current VS Code model (when available),
+   * and only use these values when the model doesn't expose them.
+   * Keep this list lean and only include models we actively target.
+   */
   private static readonly MODEL_LIMITS: ModelTokenLimits[] = [
     // GitHub Copilot models (estimated limits based on known models)
-    { modelId: 'gpt-5', maxInput: 100000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'gpt-4o', maxInput: 110000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'gpt-4.1', maxInput: 110000, maxOutput: 16384, contextWindow: 128000, estimationRatio: 4 },
-    { modelId: 'claude-3-5-sonnet', maxInput: 110000, maxOutput: 8192, contextWindow: 200000, estimationRatio: 3.5 },
+    {
+      modelId: "gpt-5",
+      maxInput: 100000,
+      maxOutput: 16384,
+      contextWindow: 128000,
+      estimationRatio: 4,
+    },
+    {
+      modelId: "gpt-4o",
+      maxInput: 110000,
+      maxOutput: 16384,
+      contextWindow: 128000,
+      estimationRatio: 4,
+    },
+    {
+      modelId: "gpt-4.1",
+      maxInput: 110000,
+      maxOutput: 16384,
+      contextWindow: 128000,
+      estimationRatio: 4,
+    },
+    {
+      modelId: "claude-3-5-sonnet",
+      maxInput: 110000,
+      maxOutput: 8192,
+      contextWindow: 200000,
+      estimationRatio: 3.5,
+    },
   ];
 
   private static readonly DEFAULT_LIMITS: ModelTokenLimits = {
-    modelId: 'default',
+    modelId: "default",
     maxInput: 32000,
     maxOutput: 4096,
     contextWindow: 32000,
-    estimationRatio: 4
+    estimationRatio: 4,
   };
 
   constructor(private currentModel?: vscode.LanguageModelChat) {}
 
   getMaxInputTokens(modelId?: string): number {
-    // Try to get from current VS Code model first
+    // Prefer live limits from the current VS Code model when available
     if (this.currentModel?.maxInputTokens) {
       return this.currentModel.maxInputTokens;
     }
@@ -39,7 +68,8 @@ export class BuiltInTokenManager implements ITokenManager {
   }
 
   getMaxOutputTokens(modelId?: string): number {
-    // VS Code doesn't provide output token limits directly
+    // VS Code Language Model API does not expose output token limits.
+    // We use known static limits when available, otherwise fall back to DEFAULT limits.
     if (modelId) {
       const limits = this.findModelLimits(modelId);
       return limits.maxOutput;
@@ -54,23 +84,33 @@ export class BuiltInTokenManager implements ITokenManager {
       try {
         return await this.currentModel.countTokens(content);
       } catch (error) {
-        console.warn('VS Code token counting failed, falling back to estimation:', error);
+        console.warn(
+          "VS Code token counting failed, falling back to estimation:",
+          error,
+        );
       }
     }
 
-    // Fall back to estimation
+    // Fall back to simple estimation:
+    // use model-specific estimationRatio (chars/token) when known, otherwise DEFAULT limits.
     return this.estimateTokens(content, modelId);
   }
 
   estimateTokens(content: string, modelId?: string): number {
-    const limits = modelId ? this.findModelLimits(modelId) : BuiltInTokenManager.DEFAULT_LIMITS;
+    const limits = modelId
+      ? this.findModelLimits(modelId)
+      : BuiltInTokenManager.DEFAULT_LIMITS;
     return Math.ceil(content.length / limits.estimationRatio);
   }
 
-  async fitsWithinLimits(content: string, modelId?: string, reserveTokens: number = 1000): Promise<boolean> {
+  async fitsWithinLimits(
+    content: string,
+    modelId?: string,
+    reserveTokens: number = 1000,
+  ): Promise<boolean> {
     const tokenCount = await this.countTokens(content, modelId);
     const maxTokens = this.getMaxInputTokens(modelId);
-    return (tokenCount + reserveTokens) <= maxTokens;
+    return tokenCount + reserveTokens <= maxTokens;
   }
 
   async getTokenUsage(content: string, modelId?: string): Promise<TokenUsage> {
@@ -79,13 +119,13 @@ export class BuiltInTokenManager implements ITokenManager {
     const remainingTokens = Math.max(0, maxTokens - tokens);
     const usagePercentage = Math.round((tokens / maxTokens) * 100);
 
-    let recommendation: TokenUsage['recommendation'] = 'ok';
+    let recommendation: TokenUsage["recommendation"] = "ok";
     if (usagePercentage >= 95) {
-      recommendation = 'reduce_content';
+      recommendation = "reduce_content";
     } else if (usagePercentage >= 85) {
-      recommendation = 'chunk_required';
+      recommendation = "chunk_required";
     } else if (usagePercentage >= 70) {
-      recommendation = 'warning';
+      recommendation = "warning";
     }
 
     return {
@@ -94,7 +134,7 @@ export class BuiltInTokenManager implements ITokenManager {
       usagePercentage,
       remainingTokens,
       fitsWithinLimits: tokens <= maxTokens,
-      recommendation
+      recommendation,
     };
   }
 
@@ -107,22 +147,24 @@ export class BuiltInTokenManager implements ITokenManager {
 
   private findModelLimits(modelId: string): ModelTokenLimits {
     // Try exact match first
-    let limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === modelId);
-    
+    let limits = BuiltInTokenManager.MODEL_LIMITS.find(
+      (limit) => limit.modelId === modelId,
+    );
+
     if (!limits) {
       // Try partial matches for model families
-      if (modelId.includes('gpt-4o')) {
-        limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === 'gpt-4o');
-      } else if (modelId.includes('gpt-4')) {
-        limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === 'gpt-4-turbo');
-      } else if (modelId.includes('gpt-3.5')) {
-        limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === 'gpt-3.5-turbo');
-      } else if (modelId.includes('claude-3-5-sonnet')) {
-        limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === 'claude-3-5-sonnet');
-      } else if (modelId.includes('claude-3-opus')) {
-        limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === 'claude-3-opus');
-      } else if (modelId.includes('claude-3-haiku')) {
-        limits = BuiltInTokenManager.MODEL_LIMITS.find(limit => limit.modelId === 'claude-3-haiku');
+      if (modelId.includes("gpt-4o")) {
+        limits = BuiltInTokenManager.MODEL_LIMITS.find(
+          (limit) => limit.modelId === "gpt-4o",
+        );
+      } else if (modelId.includes("gpt-4.1")) {
+        limits = BuiltInTokenManager.MODEL_LIMITS.find(
+          (limit) => limit.modelId === "gpt-4.1",
+        );
+      } else if (modelId.includes("claude-3-5-sonnet")) {
+        limits = BuiltInTokenManager.MODEL_LIMITS.find(
+          (limit) => limit.modelId === "claude-3-5-sonnet",
+        );
       }
     }
 

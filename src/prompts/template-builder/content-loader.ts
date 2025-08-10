@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as vscode from 'vscode';
+import * as fs from "fs";
+import * as path from "path";
+import * as vscode from "vscode";
 
 /**
  * Utility for loading external content files
@@ -26,19 +26,23 @@ export class ContentLoader {
 
     if (!this.extensionPath) {
       // For tests and development, provide fallback content
-      console.warn(`ContentLoader not initialized - using fallback content for ${filename}`);
+      console.warn(
+        `ContentLoader not initialized - using fallback content for ${filename}`,
+      );
       return this.getFallbackContent(filename);
     }
 
     try {
-      const contentDir = path.join(this.extensionPath, 'content');
+      const contentDir = path.join(this.extensionPath, "content");
       const filePath = path.join(contentDir, filename);
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = fs.readFileSync(filePath, "utf-8");
       this.cache.set(filename, content);
       return content;
     } catch (error) {
       console.warn(`Failed to load content file: ${filename}`, error);
-      console.warn(`Attempted path: ${path.join(this.extensionPath, 'content', filename)}`);
+      console.warn(
+        `Attempted path: ${path.join(this.extensionPath, "content", filename)}`,
+      );
       return `<!-- Content file ${filename} not found -->`;
     }
   }
@@ -48,9 +52,7 @@ export class ContentLoader {
    */
   static getFallbackContent(filename: string): string {
     const fallbacks: Record<string, string> = {
-      'base-instructions.md': `# Base Instructions\n\nYou are tasked with creating comprehensive business process documentation.\n\n## Requirements\n- Write in clear, business-friendly language\n- Focus on business logic and rules\n- Include process flows and decision points`,
-      'business-rule-framework.md': `## Business Rule Framework\n\nDocument all business rules and constraints that govern this process.`,
-      'documentation-style.md': `## Documentation Style Guidelines\n\n- Use clear headings and structure\n- Include examples where helpful\n- Focus on business value and outcomes`
+      "base-instructions.md": `# Base Instructions\n\nYou are tasked with creating comprehensive business process documentation.\n\n## Requirements\n- Write in clear, business-friendly language\n- Focus on business logic and rules\n- Include process flows and decision points`,
     };
 
     return fallbacks[filename] || `<!-- Fallback content for ${filename} -->`;
@@ -68,17 +70,21 @@ export class ContentLoader {
    */
   static preloadContent(): void {
     if (!this.extensionPath) {
-      throw new Error('ContentLoader not initialized. Call ContentLoader.initialize(context) first.');
+      throw new Error(
+        "ContentLoader not initialized. Call ContentLoader.initialize(context) first.",
+      );
     }
 
     try {
-      const contentDir = path.join(this.extensionPath, 'content');
+      const contentDir = path.join(this.extensionPath, "content");
       const files = fs.readdirSync(contentDir);
-      files.filter(f => f.endsWith('.md')).forEach(file => {
-        this.loadContent(file);
-      });
+      files
+        .filter((f) => f.endsWith(".md"))
+        .forEach((file) => {
+          this.loadContent(file);
+        });
     } catch (error) {
-      console.warn('Failed to preload content files', error);
+      console.warn("Failed to preload content files", error);
     }
   }
 }

@@ -102,23 +102,9 @@
         "dotnetFlow.model": {
           "type": "string",
           "default": "",
-          "description": "Combined provider and model. This is set via a dropdown using known provider/model mappings.",
-          "enum": [
-            "built-in | GPT-5 (Preview)",
-            "built-in | GPT-4o",
-            "built-in | GPT-4.1",
-            "built-in | Claude 3.5 Sonnet",
-            "bedrock | Claude Sonnet 4",
-            "bedrock | Claude Sonnet 3.5"
-          ],
-          "enumDescriptions": [
-            "VS Code Built-in | GPT-5 (Preview)",
-            "VS Code Built-in | GPT-4o",
-            "VS Code Built-in | GPT-4.1",
-            "VS Code Built-in | Claude 3.5 Sonnet",
-            "AWS Bedrock | Claude Sonnet 4",
-            "AWS Bedrock | Claude Sonnet 3.5"
-          ]
+          "markdownDescription": "Combined provider and model in the form `provider | modelId` (e.g., `built-in | gpt-4o`, `bedrock | us.anthropic.claude-3-5-sonnet-20240620-v1:0`). Prefer using the 'Dotnet Flow Tools: Select AI Model' command to choose from available models.",
+          "pattern": "^[^|]+\\s\\|\\s.*$",
+          "patternErrorMessage": "Expected format: provider | modelId (e.g., built-in | gpt-4o)"
         },
         "dotnetFlow.awsProfile": {
           "type": "string",

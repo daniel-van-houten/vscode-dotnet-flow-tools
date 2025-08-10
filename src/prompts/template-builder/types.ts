@@ -10,23 +10,23 @@ export interface PromptBuildContext {
   codeTrace?: string;
   className?: string;
   methodName?: string;
-  
+
   // Chunking context
   chunkIndex?: number;
   totalChunks?: number;
   previousDocument?: string;
-  
+
   // Progressive documentation context
   progressiveContext?: ProgressiveDocumentationContext;
-  chunkPosition?: 'first' | 'middle' | 'last';
-  
+  chunkPosition?: "first" | "middle" | "last";
+
   // Two-stage processing context
   chunkAnalyses?: string;
   chunkCount?: number;
-  
+
   // Business context
   businessContext?: string;
-  
+
   // Additional context
   [key: string]: any;
 }
@@ -37,17 +37,17 @@ export interface PromptBuildContext {
 export interface ProgressiveDocumentationContext {
   // Structured summary of documentation built so far
   documentationSummary?: DocumentationSummary;
-  
+
   // Cross-references and state tracking
   documentedMethods?: Set<string>;
   referencedButNotAnalyzed?: Set<string>;
-  
+
   // Business logic patterns identified
   identifiedPatterns?: string[];
-  
+
   // Open questions needing resolution
   pendingQuestions?: string[];
-  
+
   // Integration hints for continuity
   integrationHints?: Map<string, string>;
 }
@@ -70,7 +70,6 @@ export interface DocumentationSummary {
 export interface PromptTemplate {
   name: string;
   template: string;
-  requiredComponents: string[];
 }
 
 export interface ComponentRegistry {

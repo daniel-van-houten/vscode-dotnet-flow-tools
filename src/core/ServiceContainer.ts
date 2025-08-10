@@ -60,13 +60,14 @@ export class ServiceContainer {
  * Service keys for type safety
  */
 export const ServiceKeys = {
-  LOGGER: 'logger',
-  CONFIG_SERVICE: 'configService',
-  CLI_SERVICE: 'cliService',
-  FILE_SERVICE: 'fileService',
-  SYMBOL_SERVICE: 'symbolService',
-  PROVIDER_REGISTRY: 'providerRegistry',
-  EXTENSION_CONTEXT: 'extensionContext'
+  LOGGER: "logger",
+  CONFIG_SERVICE: "configService",
+  CLI_SERVICE: "cliService",
+  FILE_SERVICE: "fileService",
+  SYMBOL_SERVICE: "symbolService",
+  PROVIDER_REGISTRY: "providerRegistry",
+  EXTENSION_CONTEXT: "extensionContext",
+  TRACE_SERVICE: "traceService",
 } as const;
 
-export type ServiceKey = typeof ServiceKeys[keyof typeof ServiceKeys];
+export type ServiceKey = (typeof ServiceKeys)[keyof typeof ServiceKeys];
