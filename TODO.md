@@ -235,11 +235,11 @@ Acceptance:
 
 # Acceptance Checklist
 
-- [ ] All component resolution goes through one registry.
-- [ ] Linux CLI path resolves correctly or fails with a clear message.
-- [ ] No global/singleton `RateLimiter`; Bedrock uses a local instance.
-- [ ] “Select a model” error shows up in the right situations.
-- [ ] Combined model values are consistently parsed/written.
+- [x] All component resolution goes through one registry.
+- [x] Linux CLI path resolves correctly or fails with a clear message.
+- [x] No global/singleton `RateLimiter`; Bedrock uses a local instance.
+- [x] “Select a model” error shows up in the right situations.
+- [x] Combined model values are consistently parsed/written.
 - [ ] CLI invocation code lives in a single service.
 - [ ] Model logging is quiet by default; debug-gated when needed.
 - [ ] BuiltIn token limits rely on live info when available; static mappings are clean.
