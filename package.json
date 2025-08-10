@@ -123,6 +123,11 @@
           "description": "Business domain context to improve documentation examples. Describe your specific business domain, product types, or industry context to generate more relevant examples.",
           "editPresentation": "multilineText"
         },
+        "dotnetFlow.defaultSolution": {
+          "type": "string",
+          "default": "",
+          "description": "Preferred solution path or filename for this workspace folder when multiple .sln files exist. May be absolute or relative to the workspace folder."
+        },
         "dotnetFlow.debug.savePrompts": {
           "type": "boolean",
           "default": false,

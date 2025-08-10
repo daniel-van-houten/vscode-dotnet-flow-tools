@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 /**
  * Service for file system operations
@@ -10,24 +10,31 @@ export interface IFileService {
    * @param exclude Optional exclude pattern
    * @param maxResults Maximum number of results
    */
-  findFiles(pattern: string, exclude?: string, maxResults?: number): Promise<vscode.Uri[]>;
-  
+  findFiles(
+    pattern: string,
+    exclude?: string,
+    maxResults?: number,
+  ): Promise<vscode.Uri[]>;
+
   /**
    * Write content to a file
    * @param uri File URI
    * @param content Content to write
    */
   writeFile(uri: vscode.Uri, content: string): Promise<void>;
-  
+
   /**
    * Open a text document
    * @param uri File URI
    */
   openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument>;
-  
+
   /**
    * Create a file URI relative to workspace
    * @param relativePath Path relative to workspace root
    */
-  createWorkspaceUri(relativePath: string): vscode.Uri;
+  createWorkspaceUri(
+    relativePath: string,
+    workspaceFolder?: vscode.WorkspaceFolder,
+  ): vscode.Uri;
 }

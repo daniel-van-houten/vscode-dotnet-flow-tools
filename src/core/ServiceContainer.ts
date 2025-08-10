@@ -68,6 +68,7 @@ export const ServiceKeys = {
   PROVIDER_REGISTRY: "providerRegistry",
   EXTENSION_CONTEXT: "extensionContext",
   TRACE_SERVICE: "traceService",
+  SOLUTION_RESOLVER: "solutionResolver",
 } as const;
 
 export type ServiceKey = (typeof ServiceKeys)[keyof typeof ServiceKeys];
