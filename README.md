@@ -162,7 +162,7 @@ Dotnet Flow Tools
 #### Supported Bedrock Models
 - **Claude (Anthropic)**: Excellent for highly complex code
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 - **"No solution found"**: Ensure your workspace contains a `.sln` file
@@ -175,7 +175,7 @@ Dotnet Flow Tools
 - Ensure your .NET solution builds successfully
 - Verify AI provider configuration and permissions
 
-## 📝 Output Examples
+## Output Examples
 
 The extension generates markdown documentation that includes:
 - **Business Purpose**: What the method accomplishes in business terms
@@ -184,9 +184,9 @@ The extension generates markdown documentation that includes:
 - **Business Rules**: Logic and validation rules explained clearly
 - **Example Scenarios**: Real-world usage examples based on your business context
 
-## 🔄 Release Notes
+## Release Notes
 
-### 0.0.5
+### 0.1.0
 - Improved prompt templates resulting in better documentation.
 - Resolved issue with multiple solution files present in workspace
 - Added GPT-5 as a model option
