@@ -8,19 +8,58 @@ namespace DotNet.Flow.Resolvers
     {
         private readonly Solution _solution;
         private readonly Dictionary<ITypeSymbol, List<INamedTypeSymbol>> _handlerCache;
+        private readonly bool _debug;
 
-        public MediatRSymbolResolver(Solution solution)
+        public MediatRSymbolResolver(Solution solution, bool debug = false)
         {
             _solution = solution ?? throw new ArgumentNullException(nameof(solution));
             _handlerCache = new Dictionary<ITypeSymbol, List<INamedTypeSymbol>>(SymbolEqualityComparer.Default);
+            _debug = debug;
         }
 
         public bool CanResolve(IMethodSymbol method)
         {
             var containingType = method.ContainingType;
-            return containingType.Name == "IMediator" || 
-                   containingType.Name == "ISender" ||
-                   (containingType.Name == "Mediator" && method.Name == "Send");
+            
+            // Check method name first - this is the most important criteria
+            var methodName = method.IsGenericMethod ? method.OriginalDefinition.Name : method.Name;
+            if (methodName != "Send" && methodName != "Publish")
+            {
+                return false;
+            }
+            
+            // Check if this is a MediatR type (interface or implementation)
+            // Be more permissive - check namespace and interface implementations
+            var typeName = containingType.Name;
+            var isMediatrType = typeName == "IMediator" || 
+                               typeName == "ISender" ||
+                               typeName == "Mediator" ||
+                               containingType.AllInterfaces.Any(i => i.Name == "IMediator" || i.Name == "ISender");
+            
+            // Also check if the containing namespace suggests this is MediatR
+            var namespaceName = containingType.ContainingNamespace?.ToDisplayString() ?? "";
+            var isMediatRNamespace = namespaceName.Contains("MediatR", StringComparison.OrdinalIgnoreCase);
+            
+            var canResolve = isMediatrType || isMediatRNamespace;
+            
+            if (_debug)
+            {
+                if (canResolve)
+                {
+                    Console.WriteLine($"[MediatRResolver] Can resolve MediatR method: {containingType.Name}.{method.Name}");
+                    if (method.IsGenericMethod)
+                    {
+                        Console.WriteLine($"[MediatRResolver] Generic method with {method.TypeArguments.Length} type arguments");
+                    }
+                }
+                else if (methodName == "Send" || methodName == "Publish")
+                {
+                    Console.WriteLine($"[MediatRResolver] Found {methodName} method but type {containingType.Name} is not recognized as MediatR");
+                    Console.WriteLine($"[MediatRResolver] Namespace: {namespaceName}");
+                }
+            }
+            
+            return canResolve;
         }
 
         public async Task<IEnumerable<ResolvedMethod>> ResolveAsync(
@@ -28,9 +67,25 @@ namespace DotNet.Flow.Resolvers
             SemanticModel semanticModel, 
             IMethodSymbol invokedMethod)
         {
-            var requestType = GetMediatRRequestType(invocation, semanticModel);
+            if (_debug)
+            {
+                Console.WriteLine($"[MediatRResolver] Resolving method: {invokedMethod.ToDisplayString()}");
+            }
+
+            var requestType = GetMediatRRequestType(invocation, semanticModel, invokedMethod);
             if (requestType == null)
+            {
+                if (_debug)
+                {
+                    Console.WriteLine("[MediatRResolver] Could not determine request type");
+                }
                 return Enumerable.Empty<ResolvedMethod>();
+            }
+
+            if (_debug)
+            {
+                Console.WriteLine($"[MediatRResolver] Request type: {requestType.ToDisplayString()}");
+            }
 
             var handlers = await FindHandlersForRequestAsync(requestType);
             var resolvedMethods = new List<ResolvedMethod>();
@@ -43,6 +98,11 @@ namespace DotNet.Flow.Resolvers
 
                 if (handleMethod != null)
                 {
+                    if (_debug)
+                    {
+                        Console.WriteLine($"[MediatRResolver] Found handler: {handler.Name}.Handle");
+                    }
+
                     resolvedMethods.Add(new ResolvedMethod
                     {
                         Method = handleMethod,
@@ -52,25 +112,78 @@ namespace DotNet.Flow.Resolvers
                 }
             }
 
+            if (_debug)
+            {
+                Console.WriteLine($"[MediatRResolver] Resolved {resolvedMethods.Count} handler(s)");
+            }
+
             return resolvedMethods;
         }
 
-        private ITypeSymbol GetMediatRRequestType(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+        private ITypeSymbol GetMediatRRequestType(InvocationExpressionSyntax invocation, SemanticModel semanticModel, IMethodSymbol method)
         {
-            var argumentList = invocation.ArgumentList;
-            if (argumentList.Arguments.Count > 0)
+            // First try to get the request type from the method's type arguments (for generic Send<TResponse>)
+            if (method.IsGenericMethod && method.TypeArguments.Length > 0)
             {
-                var firstArg = argumentList.Arguments[0].Expression;
+                if (_debug)
+                {
+                    Console.WriteLine($"[MediatRResolver] Checking generic method type arguments");
+                }
+
+                // For Send<TResponse>, we need to look at the first argument to get the request type
+                var argumentList = invocation.ArgumentList;
+                if (argumentList.Arguments.Count > 0)
+                {
+                    var firstArg = argumentList.Arguments[0].Expression;
+                    var typeInfo = semanticModel.GetTypeInfo(firstArg);
+                    
+                    if (_debug && typeInfo.Type != null)
+                    {
+                        Console.WriteLine($"[MediatRResolver] Request type from argument: {typeInfo.Type.ToDisplayString()}");
+                    }
+                    
+                    return typeInfo.Type;
+                }
+            }
+            
+            // Fallback to regular argument inspection
+            var args = invocation.ArgumentList;
+            if (args.Arguments.Count > 0)
+            {
+                var firstArg = args.Arguments[0].Expression;
                 var typeInfo = semanticModel.GetTypeInfo(firstArg);
+                
+                if (_debug && typeInfo.Type != null)
+                {
+                    Console.WriteLine($"[MediatRResolver] Request type from argument (fallback): {typeInfo.Type.ToDisplayString()}");
+                }
+                
                 return typeInfo.Type;
             }
+            
+            if (_debug)
+            {
+                Console.WriteLine("[MediatRResolver] Could not extract request type from invocation");
+            }
+            
             return null;
         }
 
         private async Task<IEnumerable<INamedTypeSymbol>> FindHandlersForRequestAsync(ITypeSymbol requestType)
         {
             if (_handlerCache.TryGetValue(requestType, out var cached))
+            {
+                if (_debug)
+                {
+                    Console.WriteLine($"[MediatRResolver] Using cached handlers for {requestType.Name} ({cached.Count} handler(s))");
+                }
                 return cached;
+            }
+
+            if (_debug)
+            {
+                Console.WriteLine($"[MediatRResolver] Searching for handlers of {requestType.ToDisplayString()}");
+            }
 
             var handlers = new List<INamedTypeSymbol>();
 
@@ -83,6 +196,11 @@ namespace DotNet.Flow.Resolvers
                 if (compilation == null)
                     continue;
 
+                if (_debug)
+                {
+                    Console.WriteLine($"[MediatRResolver] Searching in project: {project.Name}");
+                }
+
                 var allTypes = compilation.GetSymbolsWithName(_ => true, SymbolFilter.Type)
                     .OfType<INamedTypeSymbol>();
 
@@ -91,6 +209,10 @@ namespace DotNet.Flow.Resolvers
                     if (IsHandlerForRequest(type, requestType, compilation))
                     {
                         handlers.Add(type);
+                        if (_debug)
+                        {
+                            Console.WriteLine($"[MediatRResolver] Found handler: {type.Name}");
+                        }
                     }
                 }
             }

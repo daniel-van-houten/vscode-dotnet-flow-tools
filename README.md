@@ -186,6 +186,11 @@ The extension generates markdown documentation that includes:
 
 ## Release Notes
 
+### 0.1.2
+- Fixed issue with traces stopping at interfaces
+- Fixed issue with symbol misses in Mediatr chains 
+- Added LaTeX guidance to prompts
+
 ### 0.1.0
 - Improved prompt templates resulting in better documentation.
 - Resolved issue with multiple solution files present in workspace

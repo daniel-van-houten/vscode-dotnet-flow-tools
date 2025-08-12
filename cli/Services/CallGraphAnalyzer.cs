@@ -71,6 +71,20 @@ namespace DotNet.Flow.Services
             if (semanticModel == null)
                 return node;
 
+            if (_debug)
+            {
+                var diagnostics = semanticModel.GetDiagnostics();
+                var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+                if (errors.Any())
+                {
+                    Console.WriteLine($"[CallGraphAnalyzer] Found {errors.Length} compilation errors:");
+                    foreach (var error in errors.Take(5))
+                    {
+                        Console.WriteLine($"[CallGraphAnalyzer] Error: {error.GetMessage()}");
+                    }
+                }
+            }
+
             await AnalyzeMethodBodyAsync(methodSyntax, semanticModel, node);
             
             return node;
@@ -86,13 +100,68 @@ namespace DotNet.Flow.Services
         {
             // Analyze method invocations
             var invocations = node.DescendantNodes().OfType<InvocationExpressionSyntax>();
+            
+            if (_debug)
+            {
+                Console.WriteLine($"[CallGraphAnalyzer] Found {invocations.Count()} invocations in node");
+            }
+            
             foreach (var invocation in invocations)
             {
                 var symbolInfo = semanticModel.GetSymbolInfo(invocation);
                 var invokedSymbol = symbolInfo.Symbol as IMethodSymbol;
                 
+                if (_debug)
+                {
+                    Console.WriteLine($"[CallGraphAnalyzer] Invocation syntax: {invocation.Expression}");
+                    Console.WriteLine($"[CallGraphAnalyzer] Symbol: {symbolInfo.Symbol?.ToDisplayString() ?? "null"}");
+                    
+                    if (symbolInfo.CandidateSymbols.Length > 0)
+                    {
+                        Console.WriteLine($"[CallGraphAnalyzer] Candidate symbols ({symbolInfo.CandidateSymbols.Length}):");
+                        foreach (var candidate in symbolInfo.CandidateSymbols.Take(3))
+                        {
+                            Console.WriteLine($"[CallGraphAnalyzer]   - {candidate.ToDisplayString()}");
+                        }
+                    }
+                }
+                
                 if (invokedSymbol == null)
+                {
+                    // Try using candidate symbols if available
+                    if (symbolInfo.CandidateSymbols.Length > 0)
+                    {
+                        invokedSymbol = symbolInfo.CandidateSymbols.FirstOrDefault() as IMethodSymbol;
+                        if (_debug && invokedSymbol != null)
+                        {
+                            Console.WriteLine($"[CallGraphAnalyzer] Using candidate symbol: {invokedSymbol.ToDisplayString()}");
+                        }
+                    }
+                    
+                    if (invokedSymbol == null)
+                    {
+                        if (_debug)
+                        {
+                            Console.WriteLine("[CallGraphAnalyzer] Skipping null symbol");
+                        }
+                        continue;
+                    }
+                }
+
+                // Skip methods we don't want to trace (like Dispose)
+                if (ShouldSkipMethod(invokedSymbol))
+                {
+                    if (_debug)
+                    {
+                        Console.WriteLine($"[CallGraphAnalyzer] Skipping filtered method: {invokedSymbol.Name}");
+                    }
                     continue;
+                }
+
+                if (_debug)
+                {
+                    Console.WriteLine($"[CallGraphAnalyzer] Analyzing invocation: {invokedSymbol.ContainingType.Name}.{invokedSymbol.Name}");
+                }
 
                 // Try symbol resolvers first
                 bool handled = false;
@@ -242,6 +311,23 @@ namespace DotNet.Flow.Services
         {
             return symbol.ContainingAssembly != null && 
                    _userCodeAssemblies.Contains(symbol.ContainingAssembly.Name);
+        }
+
+        private bool ShouldSkipMethod(IMethodSymbol method)
+        {
+            if (IsUserCode(method)) return false;
+            if (method.Parameters.Length != 0) return false;
+
+            switch (method.Name)
+            {
+                case "Dispose":
+                case "DisposeAsync":
+                case "Close":
+                case "Abort":
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

@@ -57,7 +57,8 @@ namespace DotNet.Flow.Services
             // Register symbol resolvers
             var symbolResolvers = new List<ISymbolResolver>
             {
-                new MediatRSymbolResolver(solution)
+                new InterfaceSymbolResolver(solution, debug),
+                new MediatRSymbolResolver(solution, debug)
             };
 
             // Register analyzer

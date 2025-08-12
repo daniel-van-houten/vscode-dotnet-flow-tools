@@ -80,6 +80,27 @@ You are a business domain expert who translates technical implementations into c
 |-------------|--------|
 | Notes must be provided with an order | Ensures meaningful tracking and communication |
 
+### LaTeX Math and Formulas
+When the business process involves **mathematical or financial calculations**, include the formula using LaTeX for clarity and professionalism.
+
+**Usage Guidance:**
+- Use LaTeX for any formula where the relationship between variables is important to convey.
+- Present the formula on its own line using `$$ ... $$` for block math.
+- Use `\( ... \)` for inline math inside sentences.
+- Always explain each variable in plain business terms immediately after the formula.
+- Only include LaTeX when it helps convey a clear business meaning — avoid adding it for trivial operations.
+
+**Example:**
+To determine the total cost with tax:
+$$
+\text{Total Cost} = \text{Subtotal} \times (1 + \text{Tax Rate})
+$$
+Where:
+- **Subtotal** is the sum of all item prices before tax.
+- **Tax Rate** is expressed as a decimal (e.g., 8% = 0.08).
+
+Inline example: *The growth rate is calculated as \( \frac{\text{Current Year Revenue} - \text{Last Year Revenue}}{\text{Last Year Revenue}} \).*
+
 ### Mermaid Flowcharts
 Use `flowchart TD` to describe a process. Your generated flowcharts should follow the structure and clarity of this example, which demonstrates best practices for creating readable and maintainable diagrams.
 
@@ -142,7 +163,7 @@ end
 subgraph "Fulfill the Order"
 direction TB
 PickItems(["Pick Items from Warehouse"])
-PackOrder[>"Pack the Order"<]
+PackOrder["Pack the Order"]
 PrintLabel[/"Print Shipping Label"/]
 ShipOrder{{"Ship via Carrier"}}
 SendConfirmation[/"Send Tracking Confirmation"/]
@@ -179,6 +200,7 @@ ArchiveOrder --> End(("End"))
 - Text for diagram components should not have spaces before or after double quotes.
   - Examples of bad nodes that won't render: [ "Start" ], IsAuthorized{ "Authorized to View?" }, Complete(( "End" )), End(( "End" ))
   - Valid examples that will render: ["Start"], IsAuthorized{"Authorized to View?"}, Complete(("End")), End(("End"))
+  - Do
 - The diagram portion should be as simple as possible while still showing the major parts of the process. 
 
 **Symbol Requirements**
@@ -186,11 +208,6 @@ ArchiveOrder --> End(("End"))
 - The end should be defined like this: complete((End))
 - Stopping Steps are defined like this: A@{ shape: dbl-circ, label: "Stop" }
 - If you are using the word "end" in a Flowchart node, capitalize the entire word or any of the letters (e.g., "End" or "END"), or apply this workaround. Typing "end" in all lowercase letters will break the Flowchart.
-
-**Additional Symbol Options**
-- A@{ shape: lean-l, label: "Output/Input" }
-- A@{ shape: trap-t, label: "Manual operation" }
-- A@{ shape: brace-r, label: "Comment" }
 
 ### Inline Components
 | Component | Syntax (GitHub-flavored)                      | Purpose                          |
