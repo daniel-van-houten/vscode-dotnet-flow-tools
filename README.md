@@ -20,7 +20,7 @@ While GitHub Copilot and similar AI tools excel at code generation and can answe
 
 **The Result**: Generate comprehensive business documentation that explains *exactly* what your technical processes do, with precision that's impossible from text-pattern analysis alone.
 
-## 🚀 Features
+## Features
 
 ### Document Generation
 Right-click any C# method → **"Document This"** to generate comprehensive business documentation with call chain analysis and domain-specific examples.
