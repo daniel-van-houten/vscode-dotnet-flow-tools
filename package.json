@@ -3,7 +3,7 @@
   "displayName": "Dotnet Flow Tools",
   "publisher": "DanielVanHouten",
   "description": "Translate .NET code into easy-to-read business domain documentation.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.101.0"
   },
@@ -94,11 +94,6 @@
     ],
     "configuration": {
       "properties": {
-        "dotnetFlow.cliBuild": {
-          "type": "string",
-          "description": "Relative path of built CLI executable inside the extension",
-          "default": "${extensionPath}/cli/dotnet-flow"
-        },
         "dotnetFlow.model": {
           "type": "string",
           "default": "",
@@ -126,7 +121,7 @@
         "dotnetFlow.defaultSolution": {
           "type": "string",
           "default": "",
-          "description": "Preferred solution path or filename for this workspace folder when multiple .sln files exist. May be absolute or relative to the workspace folder."
+          "description": "(Optional) Preferred solution path or filename for this workspace folder when multiple .sln files exist. May be absolute or relative to the workspace folder. If not specified, the extension will attempt to auto-detect the correct solution."
         },
         "dotnetFlow.debug.savePrompts": {
           "type": "boolean",

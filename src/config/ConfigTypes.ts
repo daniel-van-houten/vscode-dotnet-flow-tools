@@ -3,11 +3,6 @@
  */
 export interface DotnetFlowConfig {
   /**
-   * Path to the CLI executable
-   */
-  cliBuild: string;
-
-  /**
    * Combined provider and model in the format "providerId|modelId"
    * Example: "bedrock|us.anthropic.claude-3-5-sonnet-20240620-v1:0"
    */
@@ -33,7 +28,6 @@ export interface DotnetFlowConfig {
  * Default configuration values
  */
 export const DEFAULT_CONFIG: DotnetFlowConfig = {
-  cliBuild: '${extensionPath}/cli/dotnet-flow',
   model: undefined,
   awsProfile: 'default',
   awsRegion: 'us-east-1',

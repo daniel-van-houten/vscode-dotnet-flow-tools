@@ -13,7 +13,6 @@ export class ConfigService implements IConfigService {
     const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
     
     return {
-      cliBuild: config.get('cliBuild', DEFAULT_CONFIG.cliBuild),
       model: config.get('model', DEFAULT_CONFIG.model),
       awsProfile: config.get('awsProfile', DEFAULT_CONFIG.awsProfile),
       awsRegion: config.get('awsRegion', DEFAULT_CONFIG.awsRegion),
@@ -33,10 +32,6 @@ export class ConfigService implements IConfigService {
   ): Promise<void> {
     const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
     await config.update(key, value, target);
-  }
-
-  resolveTemplateVariables(value: string, extensionPath: string): string {
-    return value.replace('${extensionPath}', extensionPath);
   }
 
   getCliPath(extensionPath: string): string {

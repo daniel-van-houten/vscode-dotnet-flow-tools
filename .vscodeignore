@@ -1,3 +1,6 @@
+.clinerules
+CLAUDE.md 
+.claude/**
 *.visx
 .vscode/**
 .vscode-test/**

@@ -29,13 +29,6 @@ export interface IConfigService {
   ): Promise<void>;
   
   /**
-   * Resolve template variables in configuration values
-   * @param value Value to resolve
-   * @param extensionPath Extension path for ${extensionPath} substitution
-   */
-  resolveTemplateVariables(value: string, extensionPath: string): string;
-
-  /**
    * Get the platform-aware CLI path
    * @param extensionPath Extension path
    */

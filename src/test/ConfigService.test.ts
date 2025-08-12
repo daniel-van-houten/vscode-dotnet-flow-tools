@@ -147,7 +147,6 @@ Line 3: Industry-specific context`;
 
       assert.strictEqual(config.businessContext, testContext);
       // Verify other fields are still present
-      assert.strictEqual(config.cliBuild, DEFAULT_CONFIG.cliBuild);
       // provider removed in favor of combined key
       assert.ok("model" in config);
     });
@@ -157,7 +156,6 @@ Line 3: Industry-specific context`;
 
       // Verify all required fields are present
       assert.ok("businessContext" in config);
-      assert.ok("cliBuild" in config);
       assert.ok("model" in config);
       assert.ok("awsProfile" in config);
       assert.ok("awsRegion" in config);

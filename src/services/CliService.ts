@@ -26,7 +26,7 @@ export class CliService implements ICliService {
     } catch (error: any) {
       if (error.code === 'ENOENT') {
         throw new CliError(
-          `CLI executable not found at: ${command}. Please check the 'dotnetFlow.cliBuild' setting.`,
+          `CLI executable not found at: ${command}. The CLI binary may not be properly installed with the extension.`,
           error.code
         );
       }

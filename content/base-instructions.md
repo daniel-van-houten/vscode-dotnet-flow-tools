@@ -176,6 +176,9 @@ ArchiveOrder --> End(("End"))
 
 **Important Mermaid Diagram Note**
 - All text in the diagram needs to be inside double-quotes so that special characters in the text, such as parenthesis, to not prevent the diagram from rendering. 
+- Text for diagram components should not have spaces before or after double quotes.
+  - Examples of bad nodes that won't render: [ "Start" ], IsAuthorized{ "Authorized to View?" }, Complete(( "End" )), End(( "End" ))
+  - Valid examples that will render: ["Start"], IsAuthorized{"Authorized to View?"}, Complete(("End")), End(("End"))
 - The diagram portion should be as simple as possible while still showing the major parts of the process. 
 
 **Symbol Requirements**

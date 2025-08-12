@@ -1,8 +1,11 @@
+
 # Dotnet Flow Tools (Beta)
 
 **Transform .NET code into clear, readable documentation**
 
 Dotnet Flow Tools is a Visual Studio Code extension that bridges the gap between technical .NET code and business understanding. It analyzes your .NET codebase and generates comprehensive documentation that explains what your code does in business terms, making it invaluable for developers, business analysts, and technical writers.
+
+![Dotnet Flow Tools](images/hero.png)
 
 ## Why Not Just Use Copilot or Other Agentic Extensions?
 
@@ -184,7 +187,10 @@ The extension generates markdown documentation that includes:
 ## 🔄 Release Notes
 
 ### 0.0.5
-- Improved prompt templates resulting in better documentation. 
+- Improved prompt templates resulting in better documentation.
+- Resolved issue with multiple solution files present in workspace
+- Added GPT-5 as a model option
+- Improved presentation and guidance when certain exceptions occur 
 
 ### 0.0.4
 - Limited models available to Built-In model provider to realistically usable models.

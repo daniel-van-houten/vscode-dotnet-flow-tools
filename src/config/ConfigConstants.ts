@@ -7,7 +7,6 @@ export const CONFIG_SECTION = "dotnetFlow" as const;
  * Configuration keys for type-safe access
  */
 export const CONFIG_KEYS = {
-  CLI_BUILD: "dotnetFlow.cliBuild",
   // Combined provider|model identifier for simplified configuration
   MODEL: "dotnetFlow.model",
   AWS_PROFILE: "dotnetFlow.awsProfile",
