@@ -21,19 +21,23 @@ export class TraceService implements ITraceService {
   ): Promise<string> {
     const cliPath = configService.getCliPath(extensionPath);
 
-    const args = this.buildArgs(
-      solutionUri.fsPath,
-      className,
-      methodName,
-      verbosity,
-      extraArgs
-    );
+    // Uniform framework-dependent execution across all OS via the dotnet host
+    const command = 'dotnet';
+    const args = [
+      cliPath,
+      ...this.buildArgs(
+        solutionUri.fsPath,
+        className,
+        methodName,
+        verbosity,
+        extraArgs
+      )
+    ];
 
-    const result = await cliService.execute(cliPath, args, {
+    const result = await cliService.execute(command, args, {
       cwd: path.dirname(solutionUri.fsPath)
     });
 
-    // Return stdout as-is; callers decide whether to post-process (e.g., strip markers).
     return result.stdout;
   }
 

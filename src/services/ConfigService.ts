@@ -2,7 +2,9 @@ import * as vscode from 'vscode';
 import { IConfigService } from './IConfigService';
 import { DotnetFlowConfig, DEFAULT_CONFIG } from '../config/ConfigTypes';
 import { CONFIG_SECTION } from '../config/ConfigConstants';
-import { getCliPath } from '../utils/PlatformUtils';
+import * as fs from 'node:fs';
+import { platform, arch } from 'node:process';
+import { ConfigurationError } from '../core/ErrorTypes';
 
 /**
  * Implementation of configuration service
@@ -35,6 +37,15 @@ export class ConfigService implements IConfigService {
   }
 
   getCliPath(extensionPath: string): string {
-    return getCliPath(extensionPath);
+    const candidate = `${extensionPath}/cli/bin/fx/dotnet-flow.dll`;
+
+    if (!fs.existsSync(candidate)) {
+      const platformLabel = `${platform}/${arch}`;
+      throw new ConfigurationError(
+        `CLI binary not found for ${platformLabel}. Expected at: ${candidate}. Ensure .NET 8+ Runtime or SDK is installed and 'dotnet' is available in your PATH.`
+      );
+    }
+
+    return candidate;
   }
 }

@@ -1,4 +1,3 @@
-
 # Dotnet Flow Tools (Beta)
 
 **Transform .NET code into clear, readable documentation**
@@ -39,6 +38,7 @@ Smart chunking for large codebases, business context integration, and progress t
 
 ## Requirements
 - **Mermaid**: Install the Mermaid Chart extension to view the generated diagrams.  
+- **.NET 8+ Runtime or SDK**: Required on all platforms to run the CLI via the dotnet host. Ensure `dotnet` is available in your PATH. Download: https://dotnet.microsoft.com/download/dotnet
 - **.NET Solution**: Your project must contain a `.sln` solution file
 - **AI Provider**: Either built-in VSCode language models or AWS Bedrock access
 
@@ -184,37 +184,7 @@ The extension generates markdown documentation that includes:
 - **Business Rules**: Logic and validation rules explained clearly
 - **Example Scenarios**: Real-world usage examples based on your business context
 
-## Release Notes
-
-### 0.1.2
-- Fixed issue with traces stopping at interfaces
-- Fixed issue with symbol misses in Mediatr chains 
-- Added LaTeX guidance to prompts
-
-### 0.1.0
-- Improved prompt templates resulting in better documentation.
-- Resolved issue with multiple solution files present in workspace
-- Added GPT-5 as a model option
-- Improved presentation and guidance when certain exceptions occur 
-
-### 0.0.4
-- Limited models available to Built-In model provider to realistically usable models.
-- Optimized input limits for built-in models  
-- Added option to use Claude 3.5 model via Amazon Bedrock
-- Fixed issue where Bedrock provider was attempting to initialize before it was seleted. 
-- Improved error messaging.
-
-### 0.0.3
-- Updated docs
-
-### 0.0.2
-- Fixed Windows compatibility issues with Unicode symbols in CLI output
-
-### 0.0.1
-- Initial release with core documentation generation
-- Support for built-in and AWS Bedrock AI providers
-- Multiple trace generation strategies
-- Smart chunking for large codebases
-- Business context integration
+## Changelog
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 **Enjoy transforming your .NET code into clear business documentation!**

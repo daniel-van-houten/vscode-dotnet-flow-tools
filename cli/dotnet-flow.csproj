@@ -2,11 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>dotnet_flow</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);CS8618;CS8603;CS8604;CS8601;NU1903;NU1904</NoWarn>
+    <RollForward>LatestMajor</RollForward>
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
    <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
