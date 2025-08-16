@@ -1,8 +1,5 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.  
-This changelog follows the Keep a Changelog guidelines and uses Semantic Versioning.
-
 ## [0.1.3]
 ### Changed
 - Switched to a framework-dependent CLI executed via the `dotnet` host across all platforms, eliminating architecture mismatch errors (e.g., 0x8007000B) and VM/emulation issues.
