@@ -3,7 +3,7 @@
   "displayName": "Dotnet Flow Tools",
   "publisher": "DanielVanHouten",
   "description": "Translate .NET code into easy-to-read business domain documentation.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.101.0"
   },
