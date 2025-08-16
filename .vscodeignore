@@ -18,9 +18,7 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 cli/obj/**
 cli/bin/**
-!cli/bin/osx-x64/**
-!cli/bin/osx-arm64/**
-!cli/bin/win-x64/**
+!cli/bin/fx/**
 cli/*.cs
 cli/*.csproj
 cli/*.sln
@@ -30,4 +28,3 @@ cli/Formatters/**
 cli/Models/**
 cli/Resolvers/**
 cli/Services/**
-

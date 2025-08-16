@@ -39,6 +39,7 @@ Smart chunking for large codebases, business context integration, and progress t
 
 ## Requirements
 - **Mermaid**: Install the Mermaid Chart extension to view the generated diagrams.  
+- **.NET 8+ Runtime or SDK**: Required on all platforms to run the CLI via the dotnet host. Ensure `dotnet` is available in your PATH. Download: https://dotnet.microsoft.com/download/dotnet
 - **.NET Solution**: Your project must contain a `.sln` solution file
 - **AI Provider**: Either built-in VSCode language models or AWS Bedrock access
 
@@ -185,6 +186,11 @@ The extension generates markdown documentation that includes:
 - **Example Scenarios**: Real-world usage examples based on your business context
 
 ## Release Notes
+### 0.1.3
+- Switched to framework-dependent CLI executed via the `dotnet` host across all platforms (fx DLL), eliminating architecture mismatch errors (e.g., 0x8007000B) and VM/emulation issues.
+- Requires .NET 8+ Runtime or SDK on all platforms.
+- Improved CLI error messages when .NET is missing or the required runtime is not found.
+- Simplified packaging to ship the fx DLL only.
 
 ### 0.1.2
 - Fixed issue with traces stopping at interfaces
